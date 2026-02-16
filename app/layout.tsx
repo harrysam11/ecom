@@ -18,6 +18,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import Header from "@/components/shared/header"
 import Footer from "@/components/shared/footer"
 import { Toaster } from "@/components/ui/sonner"
+import { Providers } from "@/components/providers"
 
 export const metadata = {
   title: {
@@ -47,19 +48,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`min-h-screen bg-background font-sans antialiased ${inter.variable} ${playfair.variable}`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
+        <Providers>
           <div className="flex min-h-screen flex-col">
             <Header />
             <main className="flex-1">{children}</main>
             <Footer />
           </div>
-          <Toaster />
-        </ThemeProvider>
+        </Providers>
       </body>
     </html>
   )

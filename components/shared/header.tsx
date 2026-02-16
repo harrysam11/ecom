@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/sheet"
 import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
+import { Suspense } from "react"
 
 export default function Header() {
     const [scrolled, setScrolled] = useState(false)
@@ -103,7 +104,9 @@ export default function Header() {
 
                 <div className="flex flex-1 items-center justify-end space-x-2 md:space-x-6">
                     <div className="hidden lg:flex flex-1 max-w-xs items-center">
-                        <GlobalSearch />
+                        <Suspense fallback={<div className="w-full h-10 bg-muted/20 rounded-md animate-pulse" />}>
+                            <GlobalSearch />
+                        </Suspense>
                     </div>
 
                     <div className="flex items-center gap-1 md:gap-3">
@@ -114,6 +117,12 @@ export default function Header() {
                         </Button>
 
                         <CartDrawer />
+
+                        <Link href="/signup" className="hidden sm:inline-block mr-2">
+                            <Button variant="outline" size="sm">
+                                Sign Up
+                            </Button>
+                        </Link>
 
                         <Link href="/login" className="hidden sm:inline-block">
                             <Button variant="ghost" size="icon" className="group rounded-full hover:bg-black/5">
