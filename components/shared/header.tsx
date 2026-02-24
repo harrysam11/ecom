@@ -17,7 +17,7 @@ import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { Suspense } from "react"
 
-export default function Header() {
+export default function Header({ siteName = "ECOM" }: { siteName?: string }) {
     const [scrolled, setScrolled] = useState(false)
 
     useEffect(() => {
@@ -60,7 +60,7 @@ export default function Header() {
                     </Sheet>
 
                     <Link href="/" className="flex items-center space-x-2">
-                        <span className="font-serif font-black text-2xl tracking-[0.2em] transition-transform duration-500 hover:scale-105">ECOM</span>
+                        <span className="font-serif font-black text-2xl tracking-[0.2em] transition-transform duration-500 hover:scale-105">{siteName}</span>
                     </Link>
 
                     <nav className="hidden md:flex items-center gap-8 text-[11px] font-bold uppercase tracking-[0.2em]">

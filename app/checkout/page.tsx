@@ -11,12 +11,29 @@ import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { useState, useEffect } from "react"
+import { createOrder } from "@/lib/actions"
 
 export default function CheckoutPage() {
     const { items, totalPrice, clearCart } = useCartStore()
     const router = useRouter()
     const [isMounted, setIsMounted] = useState(false)
     const [loading, setLoading] = useState(false)
+
+    // Form state
+    const [formData, setFormData] = useState({
+        email: "",
+        firstName: "",
+        lastName: "",
+        address: "",
+        city: "",
+        postalCode: ""
+    })
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { id, value } = e.target
+        const key = id.replace(/-([a-z])/g, (g) => g[1].toUpperCase()) as keyof typeof formData
+        setFormData(prev => ({ ...prev, [key]: value }))
+    }
 
     useEffect(() => {
         setIsMounted(true)
@@ -38,12 +55,23 @@ export default function CheckoutPage() {
         e.preventDefault()
         setLoading(true)
 
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        const result = await createOrder({
+            items: items.map(item => ({
+                productId: item.id,
+                quantity: item.quantity,
+                price: item.price
+            })),
+            total: totalPrice(),
+            shippingAddress: formData
+        })
 
-        clearCart()
-        toast.success("Order placed successfully!")
-        router.push("/order-confirmation")
+        if (result.error) {
+            toast.error(result.error)
+        } else {
+            clearCart()
+            toast.success("Order placed successfully!")
+            router.push(`/order-confirmation?orderId=${result.orderId}`)
+        }
         setLoading(false)
     }
 
@@ -51,7 +79,7 @@ export default function CheckoutPage() {
         <div className="container mx-auto px-4 py-8">
             <h1 className="mb-8 text-3xl font-bold font-serif tracking-tight">Checkout</h1>
 
-            <div className="grid gap-8 lg:grid-cols-2">
+            <form onSubmit={handleCheckout} className="grid gap-8 lg:grid-cols-2">
                 <div className="space-y-8">
                     <Card className="rounded-none border-border/50 shadow-sm">
                         <CardHeader>
@@ -60,7 +88,15 @@ export default function CheckoutPage() {
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="email">Email Address</Label>
-                                <Input id="email" type="email" placeholder="john@example.com" required className="rounded-none" />
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    placeholder="john@example.com"
+                                    required
+                                    className="rounded-none"
+                                    value={formData.email}
+                                    onChange={handleInputChange}
+                                />
                             </div>
                         </CardContent>
                     </Card>
@@ -73,25 +109,56 @@ export default function CheckoutPage() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="first-name">First Name</Label>
-                                    <Input id="first-name" required className="rounded-none" />
+                                    <Input
+                                        id="first-name"
+                                        required
+                                        className="rounded-none"
+                                        value={formData.firstName}
+                                        onChange={handleInputChange}
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="last-name">Last Name</Label>
-                                    <Input id="last-name" required className="rounded-none" />
+                                    <Input
+                                        id="last-name"
+                                        required
+                                        className="rounded-none"
+                                        value={formData.lastName}
+                                        onChange={handleInputChange}
+                                    />
                                 </div>
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="address">Address</Label>
-                                <Input id="address" placeholder="123 Premium St" required className="rounded-none" />
+                                <Input
+                                    id="address"
+                                    placeholder="123 Premium St"
+                                    required
+                                    className="rounded-none"
+                                    value={formData.address}
+                                    onChange={handleInputChange}
+                                />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="city">City</Label>
-                                    <Input id="city" required className="rounded-none" />
+                                    <Input
+                                        id="city"
+                                        required
+                                        className="rounded-none"
+                                        value={formData.city}
+                                        onChange={handleInputChange}
+                                    />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="postgres">Postal Code</Label>
-                                    <Input id="postal-code" required className="rounded-none" />
+                                    <Label htmlFor="postal-code">Postal Code</Label>
+                                    <Input
+                                        id="postal-code"
+                                        required
+                                        className="rounded-none"
+                                        value={formData.postalCode}
+                                        onChange={handleInputChange}
+                                    />
                                 </div>
                             </div>
                         </CardContent>
@@ -102,10 +169,10 @@ export default function CheckoutPage() {
                             <CardTitle className="font-serif tracking-wide">Payment Method</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <RadioGroup defaultValue="card">
+                            <RadioGroup defaultValue="cod">
                                 <div className="flex items-center space-x-2 border p-4 cursor-pointer hover:bg-muted/50 transition-colors">
-                                    <RadioGroupItem value="card" id="card" />
-                                    <Label htmlFor="card" className="flex-1 cursor-pointer">Credit / Debit Card (Razorpay)</Label>
+                                    <RadioGroupItem value="card" id="card" disabled />
+                                    <Label htmlFor="card" className="flex-1 cursor-pointer text-muted-foreground">Credit / Debit Card (Razorpay) - Coming Soon</Label>
                                 </div>
                                 <div className="flex items-center space-x-2 border p-4 mt-[-1px] cursor-pointer hover:bg-muted/50 transition-colors">
                                     <RadioGroupItem value="cod" id="cod" />
@@ -169,9 +236,9 @@ export default function CheckoutPage() {
                             </div>
 
                             <Button
+                                type="submit"
                                 className="w-full h-12 rounded-none tracking-widest uppercase font-semibold"
                                 size="lg"
-                                onClick={handleCheckout}
                                 disabled={loading}
                             >
                                 {loading ? "Processing..." : "Place Order"}
@@ -182,7 +249,7 @@ export default function CheckoutPage() {
                         </CardContent>
                     </Card>
                 </div>
-            </div>
+            </form>
         </div>
     )
 }

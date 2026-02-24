@@ -3,75 +3,18 @@ import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Metadata } from "next"
 import { Separator } from "@/components/ui/separator"
-import { Star, Check } from "lucide-react"
+import { Star } from "lucide-react"
 import AddToCartButton from "@/components/shared/add-to-cart-button"
 import ProductReviews from "@/components/shared/product-reviews"
-import { Product } from "@/types"
 import Breadcrumbs from "@/components/shared/breadcrumbs"
 import { FadeIn, StaggerContainer } from "@/components/shared/animation-wrapper"
-
-// Mock data (same as in other files, ideally should be central)
-const MOCK_PRODUCTS: Product[] = [
-    {
-        id: "1",
-        name: "Premium Wireless Headphones",
-        description: "Experience crystal clear sound with our noise-cancelling headphones. Features 30-hour battery life, plush ear cushions, and seamless Bluetooth connectivity.",
-        price: 299.99,
-        stock: 10,
-        images: ["https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80"],
-        categoryId: "tech",
-        slug: "wireless-headphones",
-        features: ["Noise Cancellation", "30h Battery", "Bluetooth 5.0"]
-    },
-    {
-        id: "2",
-        name: "Minimalist Watch",
-        description: "Elegant design meets precision engineering. A timeless piece for any occasion.",
-        price: 149.50,
-        stock: 5,
-        images: ["https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80"],
-        categoryId: "accessories",
-        slug: "minimalist-watch",
-        features: ["Genuine Leather", "Water Resistant", "Automatic Movement"]
-    },
-    {
-        id: "3",
-        name: "Smart Fitness Tracker",
-        description: "Track your health and fitness goals with ease.",
-        price: 89.99,
-        stock: 20,
-        images: ["https://images.unsplash.com/photo-1575311373937-040b8e1fd5b6?w=500&q=80"],
-        categoryId: "tech",
-        slug: "fitness-tracker",
-        features: ["Heart Rate Monitor", "Sleep Tracking", "GPS"]
-    },
-    {
-        id: "4",
-        name: "Leather Backpack",
-        description: "Durable and stylish backpack for everyday use.",
-        price: 199.00,
-        stock: 0,
-        images: ["https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&q=80"],
-        categoryId: "fashion",
-        slug: "leather-backpack",
-        features: ["Full Grain Leather", "Laptop Sleeve", "Lifetime Warranty"]
-    },
-    {
-        id: "5",
-        name: "Ergonomic Office Chair",
-        description: "Work in comfort with our top-rated ergonomic chair.",
-        price: 350.00,
-        stock: 3,
-        images: ["https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?w=500&q=80"],
-        categoryId: "furniture",
-        slug: "ergonomic-chair",
-        features: ["Lumbar Support", "Adjustable Height", "Breathable Mesh"]
-    },
-]
+import { prisma } from "@/lib/prisma"
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
     const { slug } = await params
-    const product = MOCK_PRODUCTS.find((p) => p.slug === slug)
+    const product = await prisma.product.findUnique({
+        where: { slug }
+    })
 
     if (!product) {
         return {
@@ -92,10 +35,22 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params
-    const product = MOCK_PRODUCTS.find((p) => p.slug === slug)
+    const product = await prisma.product.findUnique({
+        where: { slug },
+        include: {
+            category: true
+        }
+    })
 
     if (!product) {
         notFound()
+    }
+
+    // Adapt prisma product to the component's expected format if needed
+    const formattedProduct = {
+        ...product,
+        price: Number(product.price),
+        features: (product as any).features || [], // Handle features if they exist in schema or as a JSON field
     }
 
     return (
@@ -130,7 +85,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                         <div>
                             <div className="flex items-center justify-between mb-4">
                                 <Badge variant="outline" className="rounded-none border-black/10 px-3 py-1 text-[10px] uppercase tracking-widest bg-secondary/50">
-                                    {product.categoryId}
+                                    {product.category.name}
                                 </Badge>
                                 {product.stock <= 0 && <Badge variant="destructive" className="rounded-none uppercase tracking-widest text-[10px]">Out of Stock</Badge>}
                             </div>
@@ -149,17 +104,17 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                             </div>
                         </div>
 
-                        <p className="text-3xl font-light tracking-wide text-black">${product.price.toFixed(2)}</p>
+                        <p className="text-3xl font-light tracking-wide text-black">${Number(product.price).toFixed(2)}</p>
 
                         <p className="text-lg font-light leading-relaxed text-muted-foreground">{product.description}</p>
 
                         <Separator className="bg-black/5" />
 
-                        {product.features && (
+                        {formattedProduct.features && formattedProduct.features.length > 0 && (
                             <div className="space-y-4">
                                 <h3 className="text-[11px] font-bold uppercase tracking-widest">Key Features</h3>
                                 <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 text-black">
-                                    {product.features.map((feature, i) => (
+                                    {formattedProduct.features.map((feature: string, i: number) => (
                                         <li key={i} className="flex items-center space-x-3 text-sm font-light">
                                             <div className="h-1.5 w-1.5 rounded-full bg-black/20" />
                                             <span>{feature}</span>
@@ -170,7 +125,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                         )}
 
                         <div className="pt-6">
-                            <AddToCartButton product={product} />
+                            <AddToCartButton product={formattedProduct as any} />
                         </div>
 
                         <div className="flex items-center gap-8 pt-8 border-t border-black/5 text-[9px] uppercase tracking-[0.2em] font-bold opacity-60">
@@ -186,7 +141,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
             <div className="mt-24 lg:mt-32 border-t border-black/5 pt-24">
                 <FadeIn direction="up">
-                    <ProductReviews />
+                    <ProductReviews productId={product.id} />
                 </FadeIn>
             </div>
         </div>

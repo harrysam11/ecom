@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { deleteProduct } from "@/lib/actions"
 
+import Link from "next/link"
+
 interface DeleteProductButtonProps {
     id: string
 }
@@ -49,7 +51,11 @@ export function DeleteProductButton({ id }: DeleteProductButtonProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem>Edit</DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                    <Link href={`/admin/products/${id}/edit`}>
+                        Edit
+                    </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
                     onClick={handleDelete}

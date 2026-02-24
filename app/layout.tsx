@@ -19,40 +19,41 @@ import Header from "@/components/shared/header"
 import Footer from "@/components/shared/footer"
 import { Toaster } from "@/components/ui/sonner"
 import { Providers } from "@/components/providers"
+import { getSettings } from "@/lib/actions"
 
-export const metadata = {
-  title: {
-    default: "ECOM Store | Premium Ecommerce",
-    template: "%s | ECOM Store"
-  },
-  description: "Experience premium shopping with ECOM. Curated collection of tech, fashion, and lifestyle products.",
-  keywords: ["ecommerce", "shopping", "premium", "tech", "fashion"],
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    url: "https://ecom-store-demo.vercel.app", // Placeholder
-    siteName: "ECOM Store",
-  },
-  twitter: {
-    card: "summary_large_image",
-    site: "@ecomstore",
-    creator: "@ecomstore",
-  },
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSettings()
+  const siteName = settings?.siteName || "ECOM Store"
+
+  return {
+    title: {
+      default: `${siteName} | Premium Ecommerce`,
+      template: `%s | ${siteName}`
+    },
+    description: settings?.metaDescription || "Experience premium shopping. Curated collection of tech, fashion, and lifestyle products.",
+    openGraph: {
+      type: "website",
+      locale: "en_US",
+      siteName: siteName,
+    },
+  }
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const settings = await getSettings()
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`min-h-screen bg-background font-sans antialiased ${inter.variable} ${playfair.variable}`}>
         <Providers>
           <div className="flex min-h-screen flex-col">
-            <Header />
+            <Header siteName={settings?.siteName} />
             <main className="flex-1">{children}</main>
-            <Footer />
+            <Footer siteName={settings?.siteName} />
           </div>
         </Providers>
       </body>

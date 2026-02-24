@@ -7,51 +7,26 @@ import TrustBadges from "@/components/shared/trust-badges"
 import Newsletter from "@/components/shared/newsletter"
 import Testimonials from "@/components/shared/testimonials"
 import { FadeIn, StaggerContainer } from "@/components/shared/animation-wrapper"
+import { prisma } from "@/lib/prisma"
+import { unstable_cache } from "next/cache"
 
-const MOCK_FEATURED_PRODUCTS: Product[] = [
-  {
-    id: "1",
-    name: "Premium Wireless Headphones",
-    description: "Experience crystal clear sound with our noise-cancelling headphones.",
-    price: 299.99,
-    stock: 10,
-    images: ["https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80"],
-    categoryId: "tech",
-    slug: "wireless-headphones"
+const getFeaturedProducts = unstable_cache(
+  async () => {
+    return prisma.product.findMany({
+      take: 4,
+      orderBy: { createdAt: "desc" },
+      where: {
+        status: "PUBLISHED"
+      }
+    })
   },
-  {
-    id: "2",
-    name: "Minimalist Watch",
-    description: "Elegant design meets precision engineering.",
-    price: 149.50,
-    stock: 5,
-    images: ["https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80"],
-    categoryId: "accessories",
-    slug: "minimalist-watch"
-  },
-  {
-    id: "3",
-    name: "Smart Fitness Tracker",
-    description: "Track your health and fitness goals with ease.",
-    price: 89.99,
-    stock: 20,
-    images: ["https://images.unsplash.com/photo-1575311373937-040b8e1fd5b6?w=500&q=80"],
-    categoryId: "tech",
-    slug: "fitness-tracker"
-  },
-  {
-    id: "4",
-    name: "Leather Backpack",
-    description: "Durable and stylish backpack for everyday use.",
-    price: 199.00,
-    stock: 0,
-    images: ["https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&q=80"],
-    categoryId: "fashion",
-    slug: "leather-backpack"
-  },
-]
+  ["featured-products"],
+  { revalidate: 3600, tags: ["products"] }
+)
 
-export default function Home() {
+export default async function Home() {
+  const featuredProducts = await getFeaturedProducts()
+
   return (
     <main className="flex min-h-screen flex-col items-center">
       <Hero />
@@ -72,9 +47,13 @@ export default function Home() {
         </FadeIn>
 
         <StaggerContainer className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-4">
-          {MOCK_FEATURED_PRODUCTS.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+          {featuredProducts.length > 0 ? (
+            featuredProducts.map((product) => (
+              <ProductCard key={product.id} product={product as any} />
+            ))
+          ) : (
+            <p className="col-span-full text-center text-muted-foreground">No featured products found.</p>
+          )}
         </StaggerContainer>
       </section>
 

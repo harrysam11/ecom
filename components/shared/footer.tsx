@@ -1,6 +1,6 @@
 import Link from "next/link"
 
-export default function Footer() {
+export default function Footer({ siteName = "Ecom Store" }: { siteName?: string }) {
     return (
         <footer className="border-t bg-background">
             <div className="container mx-auto px-4 py-8 md:py-12">
@@ -36,7 +36,7 @@ export default function Footer() {
                     </div>
                 </div>
                 <div className="mt-8 border-t pt-8 text-center text-sm text-muted-foreground">
-                    &copy; {new Date().getFullYear()} Ecom Store. All rights reserved.
+                    &copy; {new Date().getFullYear()} {siteName}. All rights reserved.
                 </div>
             </div>
         </footer>

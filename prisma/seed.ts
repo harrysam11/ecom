@@ -20,6 +20,22 @@ async function main() {
         })
     }
 
+    console.log("Seeding admin user...")
+    const bcrypt = require("bcryptjs")
+    const hashedPassword = await bcrypt.hash("admin123", 10)
+
+    await prisma.user.upsert({
+        where: { email: "admin@ecom.com" },
+        update: {},
+        create: {
+            email: "admin@ecom.com",
+            name: "Admin User",
+            password: hashedPassword,
+            role: "ADMIN",
+            emailVerified: new Date(),
+        },
+    })
+
     console.log("Seeding finished.")
 }
 
