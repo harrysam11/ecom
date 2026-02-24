@@ -1,36 +1,105 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🚀 Multi-Tenant SaaS E-commerce Platform
 
-## Getting Started
+A modern, high-performance, and feature-rich SaaS platform designed for rapid deployment and scalability. Built with **Next.js 16**, **Prisma**, and **Supabase**, this project empowers entrepreneurs to launch multiple e-commerce stores with independent identities under a single architectural roof.
 
-First, run the development server:
+---
 
+## ✨ Features
+
+- **🌐 Multi-Tenancy Logic**: Robust subdomain-based routing. Each store gets its own unique subdomain and identity.
+- **🛡️ Integrated Auth**: Secure authentication powered by **Supabase Auth** with dedicated login flows for merchants and customers.
+- **📊 Admin Dashboard**: A centralized control center for merchants to manage products, categories, orders, and store settings.
+- **🛍️ Dynamic Storefront**: Beautiful, animations-driven storefronts that adapt to the merchant's brand.
+- **💳 Subscription Tiers**: Built-in logic for specialized merchant plans:
+  - **Free**: 1% transaction fee, limited products.
+  - **Pro**: 0.5% transaction fee, unlimited products.
+  - **Premium**: 0% transaction fee, premium support.
+- **💰 Commission Engine**: Automated platform revenue tracking through transaction fees.
+- **⚡ Performance Optimized**: Server-side rendering, optimized images, and specialized caching strategies.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Framework**: [Next.js 16 (App Router)](https://nextjs.org/)
+- **Database**: [PostgreSQL (Supabase)](https://supabase.com/)
+- **ORM**: [Prisma](https://www.prisma.io/)
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
+- **Animations**: [Framer Motion](https://www.framer.com/motion/)
+- **State Management**: [Zustand](https://zustand-demo.pmnd.rs/)
+- **Forms**: [React Hook Form](https://react-hook-form.com/) + [Zod](https://zod.dev/)
+
+---
+
+## 🚀 Getting Started
+
+### 1. Prerequisites
+- Node.js 20+
+- A Supabase Project (Database & Auth)
+- Git
+
+### 2. Installation
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/your-username/ecom-saas.git
+cd ecom-saas
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 3. Environment Setup
+Create a `.env` file in the root directory and add the following:
+```env
+# Database
+DATABASE_URL="postgresql://..."
+DIRECT_URL="postgresql://..."
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+# Supabase Auth
+NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Auth Config
+AUTH_SECRET="your-secret"
+AUTH_URL="http://localhost:3000"
 
-## Learn More
+# App
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+```
 
-To learn more about Next.js, take a look at the following resources:
+### 4. Database Setup
+```bash
+npx prisma db push
+node prisma/migration.js  # Optional: Seed initial data
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 5. Running Locally
+```bash
+npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 🌍 Multi-Tenancy Setup (Local)
+To test subdomains locally (e.g., `store1.localhost:3000`), you need to modify your hosts file:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Windows:
+Add `127.0.0.1  store1.localhost` to `C:\Windows\System32\drivers\etc\hosts` (Run Notepad as Admin).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Mac/Linux:
+Add `127.0.0.1  store1.localhost` to `/etc/hosts`.
+
+Then, visit `http://store1.localhost:3000`.
+
+---
+
+## 📂 Project Structure
+
+- `app/(storefront)`: Client-facing store routes.
+- `app/(admin)`: Merchant management dashboard routes.
+- `components/shared`: Reusable UI components.
+- `lib`: Database actions, utilities, and core logic.
+- `prisma`: Database schema and migrations.
+- `utils`: Helper functions and Supabase clients.
+
+---
+
+## 📜 License
+This project is licensed under the MIT License.
