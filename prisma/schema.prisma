@@ -15,6 +15,12 @@ enum Role {
   CUSTOMER
 }
 
+enum Plan {
+  FREE
+  PRO
+  PREMIUM
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -23,15 +29,10 @@ model User {
   image         String?
   password      String?
   role          Role      @default(CUSTOMER)
-  accounts      Account[]
-  sessions      Session[]
   orders        Order[]
-  reviews       Review[]
   addresses     Address[]
   carts         Cart[]
   wishlists     Wishlist[]
-  notifications Notification[]
-  auditLogs     AuditLog[]
   storeUsers    StoreUser[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -44,21 +45,20 @@ model Store {
   customDomain    String?          @unique
   logo            String?
   favicon         String?
-  themeConfig     Json?            // Colors, fonts, layouts
   banner          String?
+  plan            Plan             @default(FREE)
+  stripeCustomerId String?
+  stripeSubscriptionId String?
+  
   siteSettings    Settings?
   products        Product[]
   categories      Category[]
   orders          Order[]
   coupons         Coupon[]
-  shippingZones   ShippingZone[]
-  storePages      StorePage[]
   storeUsers      StoreUser[]
   carts           Cart[]
   wishlists       Wishlist[]
-  returnRequests  ReturnRequest[]
-  auditLogs       AuditLog[]
-  notifications   Notification[]
+  
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 }
@@ -73,59 +73,6 @@ model StoreUser {
   createdAt DateTime @default(now())
 
   @@unique([userId, storeId])
-}
-
-model StorePage {
-  id          String   @id @default(cuid())
-  storeId     String
-  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  slug        String   // e.g., "about-us", "home"
-  title       String
-  sections    Json     // [{ type: "hero", props: {...} }, ...]
-  isPublished Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([storeId, slug])
-}
-
-model Account {
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
- 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
- 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
- 
-  @@id([provider, providerAccountId])
-}
-
-model Session {
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
- 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model VerificationToken {
-  identifier String
-  token      String
-  expires    DateTime
- 
-  @@id([identifier, token])
 }
 
 model Category {
@@ -153,21 +100,15 @@ model Product {
   name            String
   slug            String
   description     String
-  metaTitle       String?
-  metaDescription String?
   price           Decimal          @db.Decimal(10, 2)
   stock           Int              @default(0)
-  lowStockThreshold Int            @default(10)
   images          String[]
   status          ProductStatus    @default(DRAFT)
   categoryId      String
   category        Category         @relation(fields: [categoryId], references: [id])
   storeId         String
   store           Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  variants        ProductVariant[]
-  inventoryLogs   InventoryLog[]
   orderItems      OrderItem[]
-  reviews         Review[]
   cartItems       CartItem[]
   wishlistItems   WishlistItem[]
   createdAt       DateTime         @default(now())
@@ -185,26 +126,6 @@ enum ProductStatus {
   ARCHIVED
 }
 
-model ProductVariant {
-  id        String   @id @default(cuid())
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  name      String // e.g., "Size: XL", "Color: Blue"
-  price     Decimal? @db.Decimal(10, 2)
-  stock     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model InventoryLog {
-  id        String   @id @default(cuid())
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  change    Int // + for stock in, - for stock out
-  reason    String // e.g., "Order #123", "Restock"
-  createdAt DateTime @default(now())
-}
-
 model Order {
   id            String      @id @default(cuid())
   orderNumber   String      @unique @default(cuid())
@@ -215,18 +136,8 @@ model Order {
   items         OrderItem[]
   total         Decimal     @db.Decimal(10, 2)
   status        OrderStatus @default(PENDING)
-  paymentStatus PaymentStatus @default(UNPAID)
-  paymentId     String?
-  payments      Payment[]
   addressId     String?
   address       Address?    @relation(fields: [addressId], references: [id])
-  trackingNumber String?
-  courierName    String?
-  shippedAt      DateTime?
-  deliveredAt    DateTime?
-  shipmentStatus String? // e.g., "In Transit", "Out for Delivery"
-  invoiceUrl    String?
-  returnRequests ReturnRequest[]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
@@ -238,21 +149,9 @@ model Order {
 enum OrderStatus {
   PENDING
   PAID
-  PACKED
   SHIPPED
-  OUT_FOR_DELIVERY
   DELIVERED
   CANCELLED
-  RETURN_REQUESTED
-  RETURNED
-  REFUNDED
-}
-
-enum PaymentStatus {
-  UNPAID
-  PAID
-  FAILED
-  REFUNDED
 }
 
 model OrderItem {
@@ -268,19 +167,6 @@ model OrderItem {
   @@index([productId])
 }
 
-model Payment {
-  id              String        @id @default(cuid())
-  orderId         String
-  order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  amount          Decimal       @db.Decimal(10, 2)
-  currency        String        @default("USD")
-  status          PaymentStatus @default(PAID)
-  transactionId   String?
-  paymentMethod   String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-}
-
 model Address {
   id        String  @id @default(cuid())
   userId    String
@@ -293,28 +179,6 @@ model Address {
   orders    Order[]
 
   @@index([userId])
-}
-
-model Review {
-  id        String   @id @default(cuid())
-  rating    Int
-  comment   String?
-  status    ReviewStatus @default(PENDING)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  productId String
-  product   Product  @relation(fields: [productId], references: [id])
-  createdAt DateTime @default(now())
-
-  @@index([productId])
-  @@index([userId])
-  @@index([status])
-}
-
-enum ReviewStatus {
-  PENDING
-  APPROVED
-  REJECTED
 }
 
 model Cart {
@@ -362,7 +226,6 @@ model Coupon {
   code          String
   discountType  DiscountType @default(FIXED)
   discountValue Decimal  @db.Decimal(10, 2)
-  minCartValue  Decimal? @db.Decimal(10, 2)
   usageLimit    Int?
   usageCount    Int      @default(0)
   expiresAt     DateTime
@@ -386,118 +249,6 @@ model Settings {
   storeId         String   @unique
   store           Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   siteName        String   @default("My Store")
-  metaTitle       String?
-  metaDescription String?
-  logo            String?
-  favicon         String?
-  companyName     String?
-  address         String?
-  email           String?
-  phone           String?
-  taxPercentage   Decimal  @default(0) @db.Decimal(5, 2)
-  currency        String   @default("USD")
-  shippingRates   Json?
   footerText      String?
-  isCODEnabled    Boolean  @default(true)
   updatedAt       DateTime @updatedAt
-}
-
-model ShippingZone {
-  id        String         @id @default(cuid())
-  storeId   String
-  store     Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  name      String         // e.g., "India", "North America"
-  countries String[]       // ["IN"], ["US", "CA"]
-  states    String[]       // ["KA", "MH"] or empty for all
-  rates     ShippingRate[]
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-
-  @@unique([storeId, name])
-  @@index([storeId])
-}
-
-model ShippingRate {
-  id            String       @id @default(cuid())
-  zoneId        String
-  zone          ShippingZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
-  minWeight     Decimal      @default(0) @db.Decimal(10, 2)
-  maxWeight     Decimal?     @db.Decimal(10, 2)
-  flatPrice     Decimal      @db.Decimal(10, 2)
-  estimatedDays String?      // e.g., "3-5 days"
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-}
-
-model ReturnRequest {
-  id           String       @id @default(cuid())
-  orderId      String
-  order        Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  storeId      String
-  store        Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  reason       String
-  status       ReturnStatus @default(PENDING)
-  refundStatus RefundStatus @default(NOT_REFUNDED)
-  approvedBy   String?      // UserId
-  adminNotes   String?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-}
-
-enum ReturnStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  PICKED_UP
-  RECEIVED
-  COMPLETED
-}
-
-enum RefundStatus {
-  NOT_REFUNDED
-  PENDING
-  COMPLETED
-  FAILED
-}
-
-model EmailLog {
-  id        String   @id @default(cuid())
-  to        String
-  subject   String
-  template  String
-  status    String // SENT, FAILED
-  error     String?
-  createdAt DateTime @default(now())
-}
-
-model Notification {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  storeId   String?
-  store     Store?    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  title     String
-  message   String
-  type      String // NEW_ORDER, LOW_STOCK, etc.
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-  @@index([storeId])
-}
-
-model AuditLog {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  storeId   String?
-  store     Store?    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  action    String // PRODUCT_UPDATE, ORDER_STATUS_CHANGE, etc.
-  entity    String // Product, Order, etc.
-  entityId  String
-  details   Json?
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-  @@index([storeId])
 }
