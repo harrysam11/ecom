@@ -3,8 +3,8 @@
 import { prisma } from "@/lib/prisma"
 import { revalidatePath, revalidateTag } from "next/cache"
 import { z } from "zod"
-
-import { auth } from "@/auth"
+import { headers } from "next/headers"
+import { getUser } from "@/lib/auth-actions"
 
 const productSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -32,12 +32,21 @@ export async function createProduct(formData: FormData) {
     }
 
     try {
+        const hostname = (await headers()).get("host") || ""
+        const subdomain = hostname.split(".")[0]
+        const store = await prisma.store.findUnique({
+            where: { subdomain }
+        })
+
+        if (!store) return { error: "Store not found" }
+
         await prisma.product.create({
             data: {
                 ...validated.data,
+                storeId: store.id,
                 price: validated.data.price,
                 stock: validated.data.stock,
-                slug: validated.data.name.toLowerCase().replace(/ /g, "-"), // Simple slug generation
+                slug: validated.data.name.toLowerCase().replace(/ /g, "-"),
             },
         })
 
@@ -70,7 +79,10 @@ export async function deleteProduct(id: string) {
 }
 
 export async function getCategories() {
+    const hostname = (await headers()).get("host") || ""
+    const subdomain = hostname.split(".")[0]
     return await prisma.category.findMany({
+        where: { store: { subdomain } },
         orderBy: { name: "asc" },
     })
 }
@@ -87,8 +99,8 @@ export async function createOrder(data: {
         postalCode: string
     }
 }) {
-    const session = await auth()
-    if (!session?.user?.id) {
+    const user = await getUser()
+    if (!user?.id) {
         return { error: "You must be logged in to place an order" }
     }
 
@@ -114,7 +126,7 @@ export async function createOrder(data: {
             // 3. Create Address (or find existing, simplifying for now)
             const address = await tx.address.create({
                 data: {
-                    userId: session.user.id!,
+                    userId: user.id,
                     street: data.shippingAddress.address,
                     city: data.shippingAddress.city,
                     state: "N/A", // Default or extract from zip
@@ -126,7 +138,8 @@ export async function createOrder(data: {
             // 4. Create the Order
             const order = await tx.order.create({
                 data: {
-                    userId: session.user.id!,
+                    userId: user.id,
+                    storeId: store.id,
                     total: data.total,
                     status: "PENDING",
                     addressId: address.id,
@@ -195,10 +208,15 @@ export async function updateProduct(id: string, formData: FormData) {
     }
 }
 
-export async function getSettings() {
+export async function getSettings(subdomain?: string) {
     try {
-        const settings = await prisma.settings.findUnique({
-            where: { id: "site-settings" }
+        if (!subdomain) {
+            const hostname = (await headers()).get("host") || ""
+            subdomain = hostname.split(".")[0]
+        }
+
+        const settings = await prisma.settings.findFirst({
+            where: { store: { subdomain } }
         })
         return settings
     } catch (error) {

@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma"
 import { revalidatePath, revalidateTag } from "next/cache"
 import { z } from "zod"
+import { getStoreOrThrow } from "./store"
 
 const productSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -25,19 +26,11 @@ const productSchema = z.object({
 
 export async function createProduct(data: z.infer<typeof productSchema>) {
     try {
+        const store = await getStoreOrThrow()
         const product = await prisma.product.create({
             data: {
-                name: data.name,
-                slug: data.slug,
-                description: data.description,
-                price: data.price,
-                stock: data.stock,
-                lowStockThreshold: data.lowStockThreshold,
-                categoryId: data.categoryId,
-                images: data.images,
-                status: data.status,
-                metaTitle: data.metaTitle,
-                metaDescription: data.metaDescription,
+                ...data,
+                storeId: store.id,
                 variants: {
                     create: data.variants || []
                 }
@@ -55,23 +48,16 @@ export async function createProduct(data: z.infer<typeof productSchema>) {
 
 export async function updateProduct(id: string, data: z.infer<typeof productSchema>) {
     try {
-        // Delete old variants and create new ones for simplicity in this demo
-        await prisma.productVariant.deleteMany({ where: { productId: id } })
+        const store = await getStoreOrThrow()
+        // Delete old variants and create new ones for simplicity
+        await prisma.productVariant.deleteMany({
+            where: { productId: id, product: { storeId: store.id } }
+        })
 
         const product = await prisma.product.update({
-            where: { id },
+            where: { id, storeId: store.id },
             data: {
-                name: data.name,
-                slug: data.slug,
-                description: data.description,
-                price: data.price,
-                stock: data.stock,
-                lowStockThreshold: data.lowStockThreshold,
-                categoryId: data.categoryId,
-                images: data.images,
-                status: data.status,
-                metaTitle: data.metaTitle,
-                metaDescription: data.metaDescription,
+                ...data,
                 variants: {
                     create: data.variants || []
                 }
@@ -107,12 +93,12 @@ const categorySchema = z.object({
 
 export async function createCategory(data: z.infer<typeof categorySchema>) {
     try {
+        const store = await getStoreOrThrow()
         const category = await prisma.category.create({
             data: {
-                name: data.name,
-                slug: data.slug,
+                ...data,
+                storeId: store.id,
                 parentId: data.parentId || null,
-                image: data.image,
             }
         })
         revalidatePath("/categories")
@@ -317,18 +303,8 @@ export async function updateCODSettings(enabled: boolean) {
 
 export async function getSettings() {
     try {
-        const settings = await prisma.settings.findUnique({
-            where: { id: "site-settings" }
-        })
-        return settings || {
-            siteName: "Antigravity E-com",
-            companyName: "Antigravity E-com",
-            address: "123 E-commerce Street, Tech City, TC 10101",
-            email: "support@antigravity.ecom",
-            phone: "+1 234 567 890",
-            currency: "USD",
-            taxPercentage: 0
-        }
+        const store = await getStoreOrThrow()
+        return store.siteSettings
     } catch (error) {
         console.error("Failed to get settings:", error)
         return null
@@ -337,14 +313,15 @@ export async function getSettings() {
 
 export async function updateSettings(data: any) {
     try {
+        const store = await getStoreOrThrow()
         const settings = await prisma.settings.upsert({
-            where: { id: "site-settings" },
+            where: { storeId: store.id },
             update: {
                 ...data,
                 taxPercentage: Number(data.taxPercentage)
             },
             create: {
-                id: "site-settings",
+                storeId: store.id,
                 ...data,
                 taxPercentage: Number(data.taxPercentage)
             }

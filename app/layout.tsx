@@ -14,9 +14,6 @@ const playfair = Playfair_Display({
   display: "swap",
 });
 
-import { ThemeProvider } from "@/components/theme-provider"
-import Header from "@/components/shared/header"
-import Footer from "@/components/shared/footer"
 import { Toaster } from "@/components/ui/sonner"
 import { Providers } from "@/components/providers"
 import { getSettings } from "@/lib/actions"
@@ -50,11 +47,7 @@ export default async function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`min-h-screen bg-background font-sans antialiased ${inter.variable} ${playfair.variable}`}>
         <Providers>
-          <div className="flex min-h-screen flex-col">
-            <Header siteName={settings?.siteName} />
-            <main className="flex-1">{children}</main>
-            <Footer siteName={settings?.siteName} />
-          </div>
+          {children}
         </Providers>
       </body>
     </html>

@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { toast } from "sonner"
-import { signIn } from "next-auth/react"
+import { login } from "@/lib/auth-actions"
 
 export default function AdminLogin() {
     const router = useRouter()
@@ -25,17 +25,18 @@ export default function AdminLogin() {
         e.preventDefault()
         setLoading(true)
 
-        const result = await signIn("credentials", {
-            email,
-            password,
-            redirect: false,
-        })
+        const formData = new FormData()
+        formData.append("email", email)
+        formData.append("password", password)
+
+        const result = await login(formData)
 
         if (result?.error) {
-            toast.error("Invalid credentials")
+            toast.error(result.error)
         } else {
             toast.success("Welcome back, Admin")
             router.push("/admin")
+            router.refresh()
         }
         setLoading(false)
     }
@@ -64,12 +65,12 @@ export default function AdminLogin() {
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="password">Password</Label>
-                            <Input 
-                                id="password" 
-                                type="password" 
+                            <Input
+                                id="password"
+                                type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                required 
+                                required
                             />
                         </div>
                         <Button type="submit" className="w-full" disabled={loading}>

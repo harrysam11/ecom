@@ -14,6 +14,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { toast } from "sonner"
+import { signup } from "@/lib/auth-actions"
 
 export default function SignupPage() {
     const router = useRouter()
@@ -48,25 +49,18 @@ export default function SignupPage() {
         setLoading(true)
 
         try {
-            const response = await fetch("/api/auth/signup", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    name: formData.name,
-                    email: formData.email,
-                    password: formData.password,
-                }),
-            })
+            const formDataToSubmit = new FormData()
+            formDataToSubmit.append("name", formData.name)
+            formDataToSubmit.append("email", formData.email)
+            formDataToSubmit.append("password", formData.password)
 
-            const data = await response.json()
+            const result = await signup(formDataToSubmit)
 
-            if (response.ok) {
+            if (result.success) {
                 toast.success("Account created successfully! Please log in.")
                 router.push("/login")
             } else {
-                toast.error(data.error || "Something went wrong")
+                toast.error(result.error || "Something went wrong")
             }
         } catch (error) {
             toast.error("Something went wrong")
