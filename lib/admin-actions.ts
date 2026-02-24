@@ -11,17 +11,9 @@ const productSchema = z.object({
     description: z.string().min(1, "Description is required"),
     price: z.number().min(0, "Price must be positive"),
     stock: z.number().int().min(0, "Stock must be positive"),
-    lowStockThreshold: z.number().int().min(0).default(10),
     categoryId: z.string().min(1, "Category is required"),
     images: z.array(z.string()).default([]),
     status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).default("DRAFT"),
-    metaTitle: z.string().optional(),
-    metaDescription: z.string().optional(),
-    variants: z.array(z.object({
-        name: z.string(),
-        price: z.number().optional(),
-        stock: z.number().int().default(0),
-    })).optional(),
 })
 
 export async function createProduct(data: z.infer<typeof productSchema>) {
@@ -31,9 +23,6 @@ export async function createProduct(data: z.infer<typeof productSchema>) {
             data: {
                 ...data,
                 storeId: store.id,
-                variants: {
-                    create: data.variants || []
-                }
             }
         })
 
@@ -49,18 +38,10 @@ export async function createProduct(data: z.infer<typeof productSchema>) {
 export async function updateProduct(id: string, data: z.infer<typeof productSchema>) {
     try {
         const store = await getStoreOrThrow()
-        // Delete old variants and create new ones for simplicity
-        await prisma.productVariant.deleteMany({
-            where: { productId: id, product: { storeId: store.id } }
-        })
-
         const product = await prisma.product.update({
             where: { id, storeId: store.id },
             data: {
                 ...data,
-                variants: {
-                    create: data.variants || []
-                }
             }
         })
 
@@ -75,7 +56,10 @@ export async function updateProduct(id: string, data: z.infer<typeof productSche
 
 export async function deleteProduct(id: string) {
     try {
-        await prisma.product.delete({ where: { id } })
+        const store = await getStoreOrThrow()
+        await prisma.product.delete({
+            where: { id, storeId: store.id }
+        })
         revalidatePath("/products")
         revalidateTag("products")
         return { success: true }
@@ -111,13 +95,12 @@ export async function createCategory(data: z.infer<typeof categorySchema>) {
 
 export async function updateCategory(id: string, data: z.infer<typeof categorySchema>) {
     try {
+        const store = await getStoreOrThrow()
         const category = await prisma.category.update({
-            where: { id },
+            where: { id, storeId: store.id },
             data: {
-                name: data.name,
-                slug: data.slug,
+                ...data,
                 parentId: data.parentId || null,
-                image: data.image,
             }
         })
         revalidatePath("/categories")
@@ -130,7 +113,10 @@ export async function updateCategory(id: string, data: z.infer<typeof categorySc
 
 export async function deleteCategory(id: string) {
     try {
-        await prisma.category.delete({ where: { id } })
+        const store = await getStoreOrThrow()
+        await prisma.category.delete({
+            where: { id, storeId: store.id }
+        })
         revalidatePath("/categories")
         revalidateTag("categories")
         return { success: true }
@@ -139,163 +125,31 @@ export async function deleteCategory(id: string) {
     }
 }
 
+export async function getCategories() {
+    try {
+        const store = await getStoreOrThrow()
+        const categories = await prisma.category.findMany({
+            where: { storeId: store.id },
+            select: { id: true, name: true }
+        })
+        return categories
+    } catch (error) {
+        console.error("Failed to get categories:", error)
+        return []
+    }
+}
+
 export async function updateOrderStatus(id: string, status: any) {
     try {
+        const store = await getStoreOrThrow()
         const order = await prisma.order.update({
-            where: { id },
+            where: { id, storeId: store.id },
             data: { status },
-            include: { user: true }
-        })
-
-        if (["SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED"].includes(status)) {
-            const { EmailService } = await import("./email-service")
-            await EmailService.sendShippingEmail(order)
-        }
-
-        // Add Audit Log
-        await prisma.auditLog.create({
-            data: {
-                userId: "admin-id", // Should get from session
-                action: "ORDER_STATUS_CHANGE",
-                entity: "Order",
-                entityId: id,
-                details: { status }
-            }
         })
 
         revalidatePath("/orders")
         revalidatePath(`/orders/${id}`)
         return { success: true, order }
-    } catch (error: any) {
-        return { success: false, error: error.message }
-    }
-}
-
-export async function updateOrderTracking(id: string, trackingNumber: string, courierName?: string) {
-    try {
-        const order = await prisma.order.update({
-            where: { id },
-            data: {
-                trackingNumber,
-                courierName,
-                shippedAt: new Date()
-            }
-        })
-        revalidatePath("/orders")
-        revalidatePath(`/orders/${id}`)
-        return { success: true, order }
-    } catch (error: any) {
-        return { success: false, error: error.message }
-    }
-}
-
-
-const couponSchema = z.object({
-    code: z.string().min(1, "Code is required"),
-    discountType: z.enum(["PERCENTAGE", "FIXED"]),
-    discountValue: z.number().min(0),
-    minCartValue: z.number().optional().nullable(),
-    usageLimit: z.number().int().optional().nullable(),
-    expiresAt: z.date(),
-    isActive: z.boolean().default(true),
-})
-
-export async function createCoupon(data: any) {
-    try {
-        const coupon = await prisma.coupon.create({
-            data: {
-                ...data,
-                expiresAt: new Date(data.expiresAt)
-            }
-        })
-        revalidatePath("/coupons")
-        return { success: true, coupon }
-    } catch (error: any) {
-        return { success: false, error: error.message }
-    }
-}
-
-export async function updateCoupon(id: string, data: any) {
-    try {
-        const coupon = await prisma.coupon.update({
-            where: { id },
-            data: {
-                ...data,
-                expiresAt: new Date(data.expiresAt)
-            }
-        })
-        revalidatePath("/coupons")
-        return { success: true, coupon }
-    } catch (error: any) {
-        return { success: false, error: error.message }
-    }
-}
-
-export async function deleteCoupon(id: string) {
-    try {
-        await prisma.coupon.delete({ where: { id } })
-        revalidatePath("/coupons")
-        return { success: true }
-    } catch (error: any) {
-        return { success: false, error: error.message }
-    }
-}
-
-// Shipping Actions
-export async function createShippingZone(data: { name: string, countries: string[], states: string[] }) {
-    try {
-        const zone = await prisma.shippingZone.create({ data })
-        revalidatePath("/settings/shipping")
-        return { success: true, zone }
-    } catch (error: any) {
-        return { success: false, error: error.message }
-    }
-}
-
-export async function deleteShippingZone(id: string) {
-    try {
-        await prisma.shippingZone.delete({ where: { id } })
-        revalidatePath("/settings/shipping")
-        return { success: true }
-    } catch (error: any) {
-        return { success: false, error: error.message }
-    }
-}
-
-export async function createShippingRate(data: { zoneId: string, minWeight: number, maxWeight?: number | null, flatPrice: number, estimatedDays?: string }) {
-    try {
-        const rate = await prisma.shippingRate.create({
-            data: {
-                ...data,
-                maxWeight: data.maxWeight || null
-            }
-        })
-        revalidatePath("/settings/shipping")
-        return { success: true, rate }
-    } catch (error: any) {
-        return { success: false, error: error.message }
-    }
-}
-
-export async function deleteShippingRate(id: string) {
-    try {
-        await prisma.shippingRate.delete({ where: { id } })
-        revalidatePath("/settings/shipping")
-        return { success: true }
-    } catch (error: any) {
-        return { success: false, error: error.message }
-    }
-}
-
-export async function updateCODSettings(enabled: boolean) {
-    try {
-        await prisma.settings.upsert({
-            where: { id: "site-settings" },
-            update: { isCODEnabled: enabled },
-            create: { id: "site-settings", isCODEnabled: enabled }
-        })
-        revalidatePath("/settings/shipping")
-        return { success: true }
     } catch (error: any) {
         return { success: false, error: error.message }
     }
@@ -317,13 +171,11 @@ export async function updateSettings(data: any) {
         const settings = await prisma.settings.upsert({
             where: { storeId: store.id },
             update: {
-                ...data,
-                taxPercentage: Number(data.taxPercentage)
+                ...data
             },
             create: {
                 storeId: store.id,
-                ...data,
-                taxPercentage: Number(data.taxPercentage)
+                ...data
             }
         })
         revalidatePath("/(admin)", "layout")
@@ -334,7 +186,3 @@ export async function updateSettings(data: any) {
         return { success: false, error: error.message }
     }
 }
-
-
-
-

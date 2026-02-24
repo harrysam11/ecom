@@ -14,30 +14,45 @@ import {
 import { prisma } from "@/lib/prisma"
 import { SalesChart } from "@/components/admin/sales-chart"
 import { format } from "date-fns"
+import { getStoreOrThrow } from "@/lib/store"
 
 export default async function DashboardPage() {
+    const store = await getStoreOrThrow()
+
     // 1. Fetch Total Revenue
     const revenueResult = await prisma.order.aggregate({
         _sum: { total: true },
-        where: { status: { in: ["PAID", "SHIPPED", "DELIVERED"] } }
+        where: {
+            storeId: store.id,
+            status: { in: ["PAID", "SHIPPED", "DELIVERED"] }
+        }
     })
     const totalRevenue = Number(revenueResult._sum.total || 0)
 
-    // 2. Fetch Total Users
-    const totalUsers = await prisma.user.count()
+    // 2. Fetch Total Users (Store specific)
+    const totalUsers = await prisma.storeUser.count({
+        where: { storeId: store.id }
+    })
 
     // 3. Fetch Total Sales
     const totalSales = await prisma.order.count({
-        where: { status: { in: ["PAID", "SHIPPED", "DELIVERED"] } }
+        where: {
+            storeId: store.id,
+            status: { in: ["PAID", "SHIPPED", "DELIVERED"] }
+        }
     })
 
-    // 4. Fetch Active Sessions (Users with sessions that haven't expired)
+    // 4. Fetch Active Store Sessions (Approximation for MVP)
     const activeNow = await prisma.session.count({
-        where: { expires: { gt: new Date() } }
+        where: {
+            expires: { gt: new Date() },
+            user: { storeUsers: { some: { storeId: store.id } } }
+        }
     })
 
     // 5. Fetch Recent Orders
     const recentOrders = await prisma.order.findMany({
+        where: { storeId: store.id },
         take: 5,
         orderBy: { createdAt: "desc" },
         include: { user: { select: { name: true, email: true } } }
@@ -49,6 +64,7 @@ export default async function DashboardPage() {
 
     const dailyOrders = await prisma.order.findMany({
         where: {
+            storeId: store.id,
             createdAt: { gte: sevenDaysAgo },
             status: { in: ["PAID", "SHIPPED", "DELIVERED"] }
         },
@@ -80,12 +96,18 @@ export default async function DashboardPage() {
 
     // 7. Fetch Low Stock Products
     const lowStockCount = await prisma.product.count({
-        where: { stock: { lte: 10 } } // threshold can be dynamic later
+        where: {
+            storeId: store.id,
+            stock: { lte: 10 }
+        }
     })
 
     // 8. Fetch Pending Orders
     const pendingOrdersCount = await prisma.order.count({
-        where: { status: "PENDING" }
+        where: {
+            storeId: store.id,
+            status: "PENDING"
+        }
     })
 
     return (

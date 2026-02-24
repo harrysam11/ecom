@@ -135,6 +135,7 @@ model Order {
   store         Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
   items         OrderItem[]
   total         Decimal     @db.Decimal(10, 2)
+  commissionFee Decimal     @db.Decimal(10, 2) @default(0)
   status        OrderStatus @default(PENDING)
   addressId     String?
   address       Address?    @relation(fields: [addressId], references: [id])

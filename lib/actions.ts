@@ -5,78 +5,7 @@ import { revalidatePath, revalidateTag } from "next/cache"
 import { z } from "zod"
 import { headers } from "next/headers"
 import { getUser } from "@/lib/auth-actions"
-
-const productSchema = z.object({
-    name: z.string().min(1, "Name is required"),
-    description: z.string().min(1, "Description is required"),
-    price: z.coerce.number().positive("Price must be positive"),
-    stock: z.coerce.number().int().nonnegative("Stock must be non-negative"),
-    categoryId: z.string().min(1, "Category is required"),
-    images: z.array(z.string()).optional().default([]),
-})
-
-export async function createProduct(formData: FormData) {
-    const rawData = {
-        name: formData.get("name"),
-        description: formData.get("description"),
-        price: formData.get("price"),
-        stock: formData.get("stock"),
-        categoryId: formData.get("categoryId"),
-        images: formData.getAll("images") as string[],
-    }
-
-    const validated = productSchema.safeParse(rawData)
-
-    if (!validated.success) {
-        return { error: validated.error.flatten().fieldErrors }
-    }
-
-    try {
-        const hostname = (await headers()).get("host") || ""
-        const subdomain = hostname.split(".")[0]
-        const store = await prisma.store.findUnique({
-            where: { subdomain }
-        })
-
-        if (!store) return { error: "Store not found" }
-
-        await prisma.product.create({
-            data: {
-                ...validated.data,
-                storeId: store.id,
-                price: validated.data.price,
-                stock: validated.data.stock,
-                slug: validated.data.name.toLowerCase().replace(/ /g, "-"),
-            },
-        })
-
-        revalidatePath("/admin/products")
-        revalidatePath("/")
-        // @ts-ignore
-        revalidateTag("products")
-        return { success: true }
-    } catch (error) {
-        console.error("Failed to create product:", error)
-        return { error: "Failed to create product" }
-    }
-}
-
-export async function deleteProduct(id: string) {
-    try {
-        await prisma.product.delete({
-            where: { id },
-        })
-
-        revalidatePath("/admin/products")
-        revalidatePath("/")
-        // @ts-ignore
-        revalidateTag("products")
-        return { success: true }
-    } catch (error) {
-        console.error("Failed to delete product:", error)
-        return { error: "Failed to delete product" }
-    }
-}
+import { calculateAppFee } from "@/lib/pricing"
 
 export async function getCategories() {
     const hostname = (await headers()).get("host") || ""
@@ -105,9 +34,14 @@ export async function createOrder(data: {
     }
 
     try {
-        // 1. Start a transaction
+        const hostname = (await headers()).get("host") || ""
+        const subdomain = hostname.split(".")[0]
+        const store = await prisma.store.findUnique({ where: { subdomain } })
+
+        if (!store) return { error: "Store not found" }
+
         const result = await prisma.$transaction(async (tx) => {
-            // 2. Check stock and reduce it
+            // Check stock
             for (const item of data.items) {
                 const product = await tx.product.findUnique({
                     where: { id: item.productId }
@@ -123,24 +57,25 @@ export async function createOrder(data: {
                 })
             }
 
-            // 3. Create Address (or find existing, simplifying for now)
             const address = await tx.address.create({
                 data: {
                     userId: user.id,
                     street: data.shippingAddress.address,
                     city: data.shippingAddress.city,
-                    state: "N/A", // Default or extract from zip
+                    state: "N/A",
                     zip: data.shippingAddress.postalCode,
-                    country: "USA", // Default
+                    country: "USA",
                 }
             })
 
-            // 4. Create the Order
+            const commissionFee = calculateAppFee(data.total, store.plan)
+
             const order = await tx.order.create({
                 data: {
                     userId: user.id,
                     storeId: store.id,
                     total: data.total,
+                    commissionFee: commissionFee,
                     status: "PENDING",
                     addressId: address.id,
                     items: {
@@ -166,48 +101,6 @@ export async function createOrder(data: {
     }
 }
 
-export async function updateProduct(id: string, formData: FormData) {
-    const rawData = {
-        name: formData.get("name"),
-        description: formData.get("description"),
-        price: formData.get("price"),
-        stock: formData.get("stock"),
-        categoryId: formData.get("categoryId"),
-        status: formData.get("status"),
-        images: formData.getAll("images") as string[],
-    }
-
-    const validated = productSchema.extend({
-        status: z.string().optional()
-    }).safeParse(rawData)
-
-    if (!validated.success) {
-        return { error: validated.error.flatten().fieldErrors }
-    }
-
-    try {
-        await prisma.product.update({
-            where: { id },
-            data: {
-                ...validated.data,
-                price: validated.data.price,
-                stock: validated.data.stock,
-                status: (validated.data.status as any) || "ACTIVE",
-            },
-        })
-
-        revalidatePath("/admin/products")
-        revalidatePath("/")
-        revalidatePath(`/product/${validated.data.name.toLowerCase().replace(/ /g, "-")}`)
-        // @ts-ignore
-        revalidateTag("products")
-        return { success: true }
-    } catch (error) {
-        console.error("Failed to update product:", error)
-        return { error: "Failed to update product" }
-    }
-}
-
 export async function getSettings(subdomain?: string) {
     try {
         if (!subdomain) {
@@ -222,5 +115,32 @@ export async function getSettings(subdomain?: string) {
     } catch (error) {
         console.error("Failed to get settings:", error)
         return null
+    }
+}
+
+// Analytics Action for Admin Dashboard
+export async function getStoreAnalytics() {
+    try {
+        const hostname = (await headers()).get("host") || ""
+        const subdomain = hostname.split(".")[0]
+
+        const orders = await prisma.order.findMany({
+            where: {
+                store: { subdomain },
+                status: "PAID"
+            },
+            select: { total: true }
+        })
+
+        const totalSales = orders.reduce((acc, order) => acc + Number(order.total), 0)
+        const totalOrders = orders.length
+
+        return {
+            totalSales,
+            totalOrders,
+        }
+    } catch (error) {
+        console.error("Failed to get analytics:", error)
+        return { totalSales: 0, totalOrders: 0 }
     }
 }

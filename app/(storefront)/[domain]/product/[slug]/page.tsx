@@ -12,8 +12,9 @@ import { prisma } from "@/lib/prisma"
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
     const { slug } = await params
+    const { slug, domain } = await params
     const product = await prisma.product.findUnique({
-        where: { slug }
+        where: { storeId_slug: { store: { subdomain: domain }, slug } }
     })
 
     if (!product) {
@@ -33,10 +34,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     }
 }
 
-export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
-    const { slug } = await params
+export default async function ProductPage({ params }: { params: Promise<{ slug: string, domain: string }> }) {
+    const { slug, domain } = await params
     const product = await prisma.product.findUnique({
-        where: { slug },
+        where: { storeId_slug: { store: { subdomain: domain }, slug } },
         include: {
             category: true
         }
@@ -139,11 +140,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 </FadeIn>
             </StaggerContainer>
 
-            <div className="mt-24 lg:mt-32 border-t border-black/5 pt-24">
-                <FadeIn direction="up">
-                    <ProductReviews productId={product.id} />
-                </FadeIn>
-            </div>
+            {/* Reviews removed for MVP simplification */}
         </div>
     )
 }

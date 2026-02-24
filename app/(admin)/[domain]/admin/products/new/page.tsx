@@ -26,7 +26,8 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { createProduct, getCategories } from "@/lib/actions"
+import { createProduct, getCategories } from "@/lib/admin-actions"
+import { getCategories as getStorefrontCategories } from "@/lib/actions"
 
 export default function Dashboard() {
     const router = useRouter()
@@ -46,17 +47,21 @@ export default function Dashboard() {
         formData.append("status", status)
 
         startTransition(async () => {
-            const result = await createProduct(formData)
-            if (result.error) {
-                if (typeof result.error === "string") {
-                    toast.error(result.error)
-                } else {
-                    toast.error("Please check the form for errors")
-                    console.error(result.error)
-                }
-            } else {
+            const result = await createProduct({
+                name: formData.get("name") as string,
+                slug: (formData.get("name") as string).toLowerCase().replace(/ /g, "-"), // Simple slugification for MVP
+                description: formData.get("description") as string,
+                price: Number(formData.get("price")),
+                stock: Number(formData.get("stock")),
+                categoryId: selectedCategory,
+                status: status.toUpperCase() as any,
+                images: [], // Placeholder for now
+            })
+            if (result.success) {
                 toast.success("Product created successfully")
                 router.push("/admin/products")
+            } else {
+                toast.error(result.error || "Failed to create product")
             }
         })
     }

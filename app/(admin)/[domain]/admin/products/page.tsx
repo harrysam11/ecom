@@ -36,12 +36,15 @@ import {
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { prisma } from "@/lib/prisma"
-import { DeleteProductButton } from "@/components/admin/delete-product-button"
+import { DeleteProductButton } from "@/components/admin/admin/delete-product-button"
+import { getStoreOrThrow } from "@/lib/store"
 
 export const dynamic = 'force-dynamic'
 
 export default async function ProductsPage() {
+    const store = await getStoreOrThrow()
     const products = await prisma.product.findMany({
+        where: { storeId: store.id },
         orderBy: { createdAt: "desc" },
         include: {
             category: true

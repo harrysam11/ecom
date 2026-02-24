@@ -48,11 +48,6 @@ const productSchema = z.object({
     metaTitle: z.string().optional(),
     metaDescription: z.string().optional(),
     images: z.array(z.string()),
-    variants: z.array(z.object({
-        name: z.string(),
-        price: z.number().optional(),
-        stock: z.number().int(),
-    })),
 })
 
 type ProductFormValues = z.infer<typeof productSchema>
@@ -70,11 +65,7 @@ interface Product {
     metaTitle?: string | null
     metaDescription?: string | null
     images: string[]
-    variants?: {
-        name: string
-        price?: any // Decimal
-        stock: number
-    }[]
+    images: string[]
 }
 
 interface ProductFormProps {
@@ -100,11 +91,6 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
             metaTitle: initialData.metaTitle || "",
             metaDescription: initialData.metaDescription || "",
             images: initialData.images || [],
-            variants: initialData.variants?.map(v => ({
-                name: v.name,
-                price: v.price ? Number(v.price) : undefined,
-                stock: v.stock
-            })) || [],
         } : {
             name: "",
             slug: "",
@@ -117,7 +103,6 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
             metaTitle: "",
             metaDescription: "",
             images: [],
-            variants: [],
         },
     })
 
@@ -288,73 +273,6 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
                             </CardContent>
                         </Card>
 
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between">
-                                <CardTitle className="font-serif">Variants</CardTitle>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={loading}
-                                    onClick={() => {
-                                        const variants = form.getValues("variants")
-                                        form.setValue("variants", [...variants, { name: "", stock: 0 }])
-                                    }}
-                                >
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Add Variant
-                                </Button>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                {form.watch("variants")?.map((_, index) => (
-                                    <div key={index} className="flex gap-4 items-end">
-                                        <FormField
-                                            control={form.control}
-                                            name={`variants.${index}.name`}
-                                            render={({ field }) => (
-                                                <FormItem className="flex-1">
-                                                    <FormLabel>Variant Name</FormLabel>
-                                                    <FormControl>
-                                                        <Input disabled={loading} placeholder="Size: XL" {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <FormField
-                                            control={form.control}
-                                            name={`variants.${index}.stock`}
-                                            render={({ field }) => (
-                                                <FormItem className="w-24">
-                                                    <FormLabel>Stock</FormLabel>
-                                                    <FormControl>
-                                                        <Input
-                                                            type="number"
-                                                            disabled={loading}
-                                                            {...field}
-                                                            onChange={e => field.onChange(Number(e.target.value))}
-                                                        />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            disabled={loading}
-                                            onClick={() => {
-                                                const variants = form.getValues("variants")
-                                                form.setValue("variants", variants.filter((__, i) => i !== index))
-                                            }}
-                                        >
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
-                                    </div>
-                                ))}
-                            </CardContent>
-                        </Card>
                     </div>
 
                     <div className="space-y-6">

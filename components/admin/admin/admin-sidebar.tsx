@@ -26,11 +26,6 @@ const sidebarItems = [
         icon: LayoutDashboard,
     },
     {
-        title: "Reports",
-        href: "/reports/shipping",
-        icon: BarChart,
-    },
-    {
         title: "Products",
         href: "/admin/products",
         icon: Package,
@@ -46,43 +41,13 @@ const sidebarItems = [
         icon: ShoppingBag,
     },
     {
-        title: "Coupons",
-        href: "/admin/coupons",
-        icon: Ticket,
-    },
-    {
-        title: "Payments",
-        href: "/admin/payments",
-        icon: CreditCard,
-    },
-    {
-        title: "Inventory",
-        href: "/admin/inventory",
-        icon: ClipboardList,
-    },
-    {
-        title: "Reviews",
-        href: "/admin/reviews",
-        icon: Star,
-    },
-    {
         title: "Customers",
         href: "/admin/customers",
         icon: Users,
     },
     {
-        title: "Returns",
-        href: "/returns",
-        icon: History,
-    },
-    {
-        title: "Shipping",
-        href: "/settings/shipping",
-        icon: Truck,
-    },
-    {
         title: "Settings",
-        href: "/settings",
+        href: "/admin/settings",
         icon: Settings,
     },
 ]

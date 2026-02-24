@@ -11,11 +11,12 @@ import { prisma } from "@/lib/prisma"
 import { unstable_cache } from "next/cache"
 
 const getFeaturedProducts = unstable_cache(
-  async () => {
+  async (subdomain: string) => {
     return prisma.product.findMany({
       take: 4,
       orderBy: { createdAt: "desc" },
       where: {
+        store: { subdomain },
         status: "PUBLISHED"
       }
     })
@@ -24,8 +25,14 @@ const getFeaturedProducts = unstable_cache(
   { revalidate: 3600, tags: ["products"] }
 )
 
-export default async function Home() {
-  const featuredProducts = await getFeaturedProducts()
+export default async function Home({ params }: { params: Promise<{ domain: string }> }) {
+  const { domain } = await params
+  const featuredProducts = await getFeaturedProducts(domain)
+
+  const categories = await prisma.category.findMany({
+    where: { store: { subdomain: domain } },
+    take: 3
+  })
 
   return (
     <main className="flex min-h-screen flex-col items-center">
@@ -68,12 +75,12 @@ export default async function Home() {
           </p>
         </FadeIn>
         <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {['Tech', 'Fashion', 'Accessories'].map((cat, i) => (
-            <FadeIn key={cat} direction="up" delay={i * 0.1}>
-              <Link href={`/products?category=${cat.toLowerCase()}`} className="group relative aspect-[4/5] overflow-hidden bg-secondary block">
+          {categories.map((cat, i) => (
+            <FadeIn key={cat.id} direction="up" delay={i * 0.1}>
+              <Link href={`/products?category=${cat.slug}`} className="group relative aspect-[4/5] overflow-hidden bg-secondary block">
                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-500 z-10" />
                 <div className="absolute inset-x-8 bottom-8 z-20 transition-transform duration-500 group-hover:-translate-y-2">
-                  <h3 className="text-2xl font-bold text-white font-serif uppercase tracking-tighter">{cat}</h3>
+                  <h3 className="text-2xl font-bold text-white font-serif uppercase tracking-tighter">{cat.name}</h3>
                   <p className="text-[10px] text-white/80 uppercase tracking-widest font-bold mt-2 opacity-0 group-hover:opacity-100 transition-opacity">Discover Selection</p>
                 </div>
               </Link>

@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { PlusCircle, Search } from "lucide-react"
+import { getStoreOrThrow } from "@/lib/store"
 import { Button } from "@/components/ui/button"
 import {
     Card,
@@ -19,7 +20,9 @@ import {
 import { prisma } from "@/lib/prisma"
 
 export default async function CategoriesPage() {
+    const store = await getStoreOrThrow()
     const categories = await prisma.category.findMany({
+        where: { storeId: store.id },
         include: {
             parent: true,
             _count: {
