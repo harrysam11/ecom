@@ -1,6 +1,7 @@
 import { getSettings } from "@/lib/actions"
 import Header from "@/components/shared/header"
 import Footer from "@/components/shared/footer"
+import Chatbot from "@/components/shared/chatbot"
 
 export default async function StorefrontLayout({
     children,
@@ -29,7 +30,10 @@ export default async function StorefrontLayout({
         >
             {!isPlatform && <Header siteName={settings?.siteName} />}
             <main className="flex-1">{children}</main>
-            {!isPlatform && <Footer siteName={settings?.siteName} />}
+            {!isPlatform && <Footer siteName={settings?.siteName} showBranding={settings?.store?.plan === "FREE"} />}
+            {!isPlatform && settings?.store?.plan === "PREMIUM" && (
+                <Chatbot storeName={settings?.siteName || "Store"} />
+            )}
         </div>
     )
 }

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { revalidatePath, revalidateTag } from "next/cache"
 import { z } from "zod"
 import { getStoreOrThrow } from "./store"
+import { PRICING_PLANS } from "@/lib/pricing"
 
 const productSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -19,6 +20,16 @@ const productSchema = z.object({
 export async function createProduct(data: z.infer<typeof productSchema>) {
     try {
         const store = await getStoreOrThrow()
+
+        // Enforce Product Limits based on Pricing Tier
+        const productCount = await prisma.product.count({
+            where: { storeId: store.id }
+        })
+        const limit = PRICING_PLANS[store.plan as keyof typeof PRICING_PLANS]?.productsLimit || 10
+        if (productCount >= limit) {
+            return { success: false, error: `You have reached the maximum product limit (${limit}) for your ${store.plan} plan. Please upgrade to add more.` }
+        }
+
         const product = await prisma.product.create({
             data: {
                 ...data,

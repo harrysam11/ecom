@@ -148,9 +148,9 @@ return (
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
                         {[
-                            { name: "Starter", price: "0", features: ["1 Store", "Unlimited Products", "Basic Analytics", "Ecom Subdomain"] },
-                            { name: "Pro", price: "29", features: ["3 Stores", "Advanced Customization", "Priority Support", "Custom Domain Support"], featured: true },
-                            { name: "Ultimate", price: "99", features: ["Unlimited Stores", "Dedicated Manager", "0% Transaction Fees", "Wholesale Tools"] },
+                            { name: "Starter", price: "0", features: ["10 Products Limit", "1% Transaction Fee", "Ecom Subdomain", "Powered By Branding"] },
+                            { name: "Pro", price: "19", features: ["Unlimited Products", "0.5% Transaction Fee", "Custom Domain Support", "Remove Branding"], featured: true },
+                            { name: "Premium", price: "49", features: ["Unlimited Products", "0% Transaction Fee", "Priority Support", "Basic Analytics", "AI Chatbot & Builder"] },
                         ].map((p, i) => (
                             <div key={i} className={`p-12 border ${p.featured ? 'border-black border-2 scale-105 shadow-2xl z-10' : 'border-black/5'} flex flex-col`}>
                                 <h3 className="text-2xl font-bold uppercase tracking-tighter font-serif mb-2">{p.name}</h3>

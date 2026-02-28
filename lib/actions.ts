@@ -115,7 +115,8 @@ export async function getSettings(subdomain?: string) {
         }
 
         const settings = await prisma.settings.findFirst({
-            where: { store: { subdomain } }
+            where: { store: { subdomain } },
+            include: { store: true }
         })
         return settings
     } catch (error) {

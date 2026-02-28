@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { updateSettings } from "@/lib/admin-actions"
+import { AIThemeBuilder } from "./ai-theme-builder"
 
 interface SettingsFormProps {
     initialData: any
@@ -30,6 +31,14 @@ export function SettingsForm({ initialData }: SettingsFormProps) {
         fontFamily: "inter",
         showNewsletter: true
     })
+
+    const handleThemeGenerated = (theme: { themeColor: string; fontFamily: string }) => {
+        setFormData((prev: any) => ({
+            ...prev,
+            themeColor: theme.themeColor,
+            fontFamily: theme.fontFamily
+        }))
+    }
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -59,6 +68,8 @@ export function SettingsForm({ initialData }: SettingsFormProps) {
                     Save Changes
                 </Button>
             </div>
+
+            <AIThemeBuilder onThemeGenerated={handleThemeGenerated} />
 
             <div className="grid gap-6 md:grid-cols-2">
                 <Card>
@@ -183,7 +194,8 @@ export function SettingsForm({ initialData }: SettingsFormProps) {
                                         id="themeColor"
                                         name="themeColor"
                                         type="color"
-                                        defaultValue={formData.themeColor || "#000000"}
+                                        value={formData.themeColor || "#000000"}
+                                        onChange={(e) => setFormData({ ...formData, themeColor: e.target.value })}
                                         className="w-20 h-10 p-1 rounded-none border-black/10"
                                     />
                                     <span className="text-xs font-mono opacity-60 uppercase">{formData.themeColor || "#000000"}</span>
@@ -194,7 +206,8 @@ export function SettingsForm({ initialData }: SettingsFormProps) {
                                 <select
                                     id="fontFamily"
                                     name="fontFamily"
-                                    defaultValue={formData.fontFamily || "inter"}
+                                    value={formData.fontFamily || "inter"}
+                                    onChange={(e) => setFormData({ ...formData, fontFamily: e.target.value })}
                                     className="flex h-10 w-full border border-black/10 bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 rounded-none"
                                 >
                                     <option value="inter">Sans (Inter)</option>

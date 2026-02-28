@@ -1,6 +1,6 @@
 import Link from "next/link"
 
-export default function Footer({ siteName = "Ecom Store" }: { siteName?: string }) {
+export default function Footer({ siteName = "Ecom Store", showBranding = false }: { siteName?: string, showBranding?: boolean }) {
     return (
         <footer className="border-t bg-background">
             <div className="container mx-auto px-4 py-8 md:py-12">
@@ -35,8 +35,15 @@ export default function Footer({ siteName = "Ecom Store" }: { siteName?: string 
                         {/* Add newsletter form here */}
                     </div>
                 </div>
-                <div className="mt-8 border-t pt-8 text-center text-sm text-muted-foreground">
-                    &copy; {new Date().getFullYear()} {siteName}. All rights reserved.
+                <div className="mt-8 border-t pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground gap-4">
+                    <div>
+                        &copy; {new Date().getFullYear()} {siteName}. All rights reserved.
+                    </div>
+                    {showBranding && (
+                        <div className="font-medium">
+                            Powered by <Link href="https://ecom-saas.com" className="font-bold text-black hover:underline">Ecom SaaS</Link>
+                        </div>
+                    )}
                 </div>
             </div>
         </footer>
