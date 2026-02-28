@@ -99,6 +99,18 @@ Then, visit `http://store1.localhost:3000`.
 - `prisma`: Database schema and migrations.
 - `utils`: Helper functions and Supabase clients.
 
+## 📂 Project Stack
+
+| Layer     | Tool                                   |
+| --------- | -------------------------------------- |
+| Hosting   | **Hostinger + Vercel**                 |
+| Frontend  | **Next.js**                            |
+| Backend   | **Supabase (Auth + DB)**               |
+| Payments  | **Lemon Squeezy + Stripe**             |
+| Emails    | **SendEmail / SendGrid**               |
+| Auth      | **Google Auth + Supabase Auth**        |
+| Analytics | Built-in dashboards + optional BI tool |
+
 ---
 
 ## 📜 License
