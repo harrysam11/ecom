@@ -169,7 +169,11 @@ export async function updateOrderStatus(id: string, status: any) {
 export async function getSettings() {
     try {
         const store = await getStoreOrThrow()
-        return store.siteSettings
+        return {
+            ...store.siteSettings,
+            morMerchantId: store.morMerchantId,
+            morWebhookKey: store.morWebhookKey
+        }
     } catch (error) {
         console.error("Failed to get settings:", error)
         return null
@@ -179,14 +183,25 @@ export async function getSettings() {
 export async function updateSettings(data: any) {
     try {
         const store = await getStoreOrThrow()
+
+        const { morMerchantId, morWebhookKey, ...settingsData } = data
+
+        await prisma.store.update({
+            where: { id: store.id },
+            data: {
+                morMerchantId: morMerchantId || null,
+                morWebhookKey: morWebhookKey || null,
+            }
+        })
+
         const settings = await prisma.settings.upsert({
             where: { storeId: store.id },
             update: {
-                ...data
+                ...settingsData
             },
             create: {
                 storeId: store.id,
-                ...data
+                ...settingsData
             }
         })
         revalidatePath("/(admin)", "layout")

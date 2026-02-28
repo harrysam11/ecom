@@ -230,6 +230,36 @@ export function SettingsForm({ initialData }: SettingsFormProps) {
                         </div>
                     </CardContent>
                 </Card>
+
+                <Card className="md:col-span-2 border-primary/20">
+                    <CardHeader>
+                        <CardTitle>Payment Gateway (Lemon Squeezy)</CardTitle>
+                        <CardDescription>Configure your Merchant of Record affiliation to accept payments securely.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="morMerchantId">Lemon Squeezy Affiliate / Store ID</Label>
+                                <Input
+                                    id="morMerchantId"
+                                    name="morMerchantId"
+                                    defaultValue={formData?.morMerchantId || ""}
+                                    placeholder="e.g. 12345"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="morWebhookKey">Webhook Signing Secret</Label>
+                                <Input
+                                    id="morWebhookKey"
+                                    name="morWebhookKey"
+                                    type="password"
+                                    defaultValue={formData?.morWebhookKey || ""}
+                                    placeholder="Enter your secure secret"
+                                />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
         </form>
     )
