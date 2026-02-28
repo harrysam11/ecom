@@ -9,6 +9,7 @@ import Testimonials from "@/components/shared/testimonials"
 import { FadeIn, StaggerContainer } from "@/components/shared/animation-wrapper"
 import { prisma } from "@/lib/prisma"
 import { unstable_cache } from "next/cache"
+import SaasLandingPage from "@/components/saas/landing-page"
 
 const getFeaturedProducts = unstable_cache(
   async (subdomain: string) => {
@@ -27,6 +28,11 @@ const getFeaturedProducts = unstable_cache(
 
 export default async function Home({ params }: { params: Promise<{ domain: string }> }) {
   const { domain } = await params
+
+  if (domain === "platform") {
+    return <SaasLandingPage />
+  }
+
   const featuredProducts = await getFeaturedProducts(domain)
 
   const categories = await prisma.category.findMany({

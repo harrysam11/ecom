@@ -3,16 +3,19 @@ export const PRICING_PLANS = {
         name: "Free",
         feePercentage: 0.01, // 1%
         productsLimit: 10,
+        priceId: "price_free_placeholder"
     },
     PRO: {
         name: "Pro",
         feePercentage: 0.005, // 0.5%
         productsLimit: Infinity,
+        priceId: "price_pro_placeholder"
     },
     PREMIUM: {
         name: "Premium",
         feePercentage: 0, // 0%
         productsLimit: Infinity,
+        priceId: "price_premium_placeholder"
     }
 }
 

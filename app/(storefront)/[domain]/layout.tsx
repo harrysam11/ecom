@@ -12,11 +12,24 @@ export default async function StorefrontLayout({
     const { domain } = await params
     const settings = await getSettings(domain)
 
+    const isPlatform = domain === "platform"
+
+    const themeStyles = {
+        "--primary": settings?.themeColor || "#000000",
+        "--font-store": settings?.fontFamily === "playfair" ? "var(--font-serif)" :
+            settings?.fontFamily === "poppins" ? "var(--font-poppins)" :
+                settings?.fontFamily === "roboto" ? "var(--font-roboto)" :
+                    "var(--font-sans)"
+    } as React.CSSProperties
+
     return (
-        <div className="flex min-h-screen flex-col">
-            <Header siteName={settings?.siteName} />
+        <div
+            className="flex min-h-screen flex-col font-store"
+            style={themeStyles}
+        >
+            {!isPlatform && <Header siteName={settings?.siteName} />}
             <main className="flex-1">{children}</main>
-            <Footer siteName={settings?.siteName} />
+            {!isPlatform && <Footer siteName={settings?.siteName} />}
         </div>
     )
 }

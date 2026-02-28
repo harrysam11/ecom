@@ -4,14 +4,18 @@ import { Badge } from "@/components/ui/badge"
 import { FadeIn, StaggerContainer } from "@/components/shared/animation-wrapper"
 
 export default async function ProductsPage({
+    params,
     searchParams
 }: {
+    params: Promise<{ domain: string }>
     searchParams: Promise<{ category?: string }>
 }) {
+    const { domain } = await params
     const { category } = await searchParams
 
     const products = await prisma.product.findMany({
         where: {
+            store: { subdomain: domain },
             status: "PUBLISHED",
             ...(category ? {
                 category: {
@@ -28,6 +32,7 @@ export default async function ProductsPage({
     })
 
     const categories = await prisma.category.findMany({
+        where: { store: { subdomain: domain } },
         orderBy: { name: "asc" }
     })
 

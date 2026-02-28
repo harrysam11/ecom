@@ -8,8 +8,10 @@ import { getUser } from "@/lib/auth-actions"
 import { calculateAppFee } from "@/lib/pricing"
 
 export async function getCategories() {
-    const hostname = (await headers()).get("host") || ""
-    const subdomain = hostname.split(".")[0]
+    const hostnameWithPort = (await headers()).get("host") || ""
+    const hostname = hostnameWithPort.split(":")[0]
+    const rootDomains = ["localhost", "ecom-saas.com"]
+    const subdomain = rootDomains.includes(hostname) ? "platform" : hostnameWithPort.split(".")[0]
     return await prisma.category.findMany({
         where: { store: { subdomain } },
         orderBy: { name: "asc" },
@@ -34,8 +36,10 @@ export async function createOrder(data: {
     }
 
     try {
-        const hostname = (await headers()).get("host") || ""
-        const subdomain = hostname.split(".")[0]
+        const hostnameWithPort = (await headers()).get("host") || ""
+        const hostname = hostnameWithPort.split(":")[0]
+        const rootDomains = ["localhost", "ecom-saas.com"]
+        const subdomain = rootDomains.includes(hostname) ? "platform" : hostnameWithPort.split(".")[0]
         const store = await prisma.store.findUnique({ where: { subdomain } })
 
         if (!store) return { error: "Store not found" }
@@ -104,8 +108,10 @@ export async function createOrder(data: {
 export async function getSettings(subdomain?: string) {
     try {
         if (!subdomain) {
-            const hostname = (await headers()).get("host") || ""
-            subdomain = hostname.split(".")[0]
+            const hostnameWithPort = (await headers()).get("host") || ""
+            const hostname = hostnameWithPort.split(":")[0]
+            const rootDomains = ["localhost", "ecom-saas.com"]
+            subdomain = rootDomains.includes(hostname) ? "platform" : hostnameWithPort.split(".")[0]
         }
 
         const settings = await prisma.settings.findFirst({
@@ -121,8 +127,10 @@ export async function getSettings(subdomain?: string) {
 // Analytics Action for Admin Dashboard
 export async function getStoreAnalytics() {
     try {
-        const hostname = (await headers()).get("host") || ""
-        const subdomain = hostname.split(".")[0]
+        const hostnameWithPort = (await headers()).get("host") || ""
+        const hostname = hostnameWithPort.split(":")[0]
+        const rootDomains = ["localhost", "ecom-saas.com"]
+        const subdomain = rootDomains.includes(hostname) ? "platform" : hostnameWithPort.split(".")[0]
 
         const orders = await prisma.order.findMany({
             where: {

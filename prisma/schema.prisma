@@ -251,5 +251,9 @@ model Settings {
   store           Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   siteName        String   @default("My Store")
   footerText      String?
+  themeColor      String   @default("#000000")
+  fontFamily      String   @default("inter")
+  showNewsletter  Boolean  @default(true)
+  paymentGateway  String?  // stripe, paypal, etc.
   updatedAt       DateTime @updatedAt
 }

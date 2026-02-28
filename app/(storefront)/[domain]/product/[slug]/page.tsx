@@ -11,7 +11,6 @@ import { FadeIn, StaggerContainer } from "@/components/shared/animation-wrapper"
 import { prisma } from "@/lib/prisma"
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-    const { slug } = await params
     const { slug, domain } = await params
     const product = await prisma.product.findUnique({
         where: { storeId_slug: { store: { subdomain: domain }, slug } }

@@ -51,10 +51,10 @@ export default function Header({ siteName = "ECOM" }: { siteName?: string }) {
                                 <SheetTitle className="text-left font-serif tracking-widest uppercase">Navigation</SheetTitle>
                             </SheetHeader>
                             <nav className="flex flex-col gap-6 mt-12">
-                                <Link href="/" className="text-2xl font-light hover:text-primary transition-colors">Home</Link>
-                                <Link href="/products" className="text-2xl font-light hover:text-primary transition-colors">Shop All</Link>
-                                <Link href="/categories" className="text-2xl font-light hover:text-primary transition-colors">Collections</Link>
-                                <Link href="/about" className="text-2xl font-light hover:text-primary transition-colors">Manifesto</Link>
+                                <Link href="/" className="text-2xl font-light hover:text-[var(--primary)] transition-colors">Home</Link>
+                                <Link href="/products" className="text-2xl font-light hover:text-[var(--primary)] transition-colors">Shop All</Link>
+                                <Link href="/categories" className="text-2xl font-light hover:text-[var(--primary)] transition-colors">Collections</Link>
+                                <Link href="/about" className="text-2xl font-light hover:text-[var(--primary)] transition-colors">Manifesto</Link>
                             </nav>
                         </SheetContent>
                     </Sheet>
@@ -65,7 +65,7 @@ export default function Header({ siteName = "ECOM" }: { siteName?: string }) {
 
                     <nav className="hidden md:flex items-center gap-8 text-[11px] font-bold uppercase tracking-[0.2em]">
                         <div className="group relative">
-                            <Link href="/products" className="flex items-center gap-1 transition-colors hover:text-primary/60">
+                            <Link href="/products" className="flex items-center gap-1 transition-colors hover:text-[var(--primary)]/60">
                                 Shop <ChevronDown className="h-3 w-3 transition-transform group-hover:rotate-180" />
                             </Link>
                             {/* Mega Menu Mock */}
@@ -74,17 +74,17 @@ export default function Header({ siteName = "ECOM" }: { siteName?: string }) {
                                     <div className="space-y-4">
                                         <h4 className="font-bold border-b pb-2">Essentials</h4>
                                         <ul className="space-y-2 font-light normal-case tracking-normal text-muted-foreground">
-                                            <li><Link href="/products?category=new" className="hover:text-primary transition-colors">New Arrivals</Link></li>
-                                            <li><Link href="/products?category=best" className="hover:text-primary transition-colors">Best Sellers</Link></li>
-                                            <li><Link href="/products?category=sale" className="hover:text-primary transition-colors">Special Offers</Link></li>
+                                            <li><Link href="/products?category=new" className="hover:text-[var(--primary)] transition-colors">New Arrivals</Link></li>
+                                            <li><Link href="/products?category=best" className="hover:text-[var(--primary)] transition-colors">Best Sellers</Link></li>
+                                            <li><Link href="/products?category=sale" className="hover:text-[var(--primary)] transition-colors">Special Offers</Link></li>
                                         </ul>
                                     </div>
                                     <div className="space-y-4">
                                         <h4 className="font-bold border-b pb-2">Collections</h4>
                                         <ul className="space-y-2 font-light normal-case tracking-normal text-muted-foreground">
-                                            <li><Link href="/products?category=minimal" className="hover:text-primary transition-colors">Minimalist</Link></li>
-                                            <li><Link href="/products?category=luxury" className="hover:text-primary transition-colors">Luxury</Link></li>
-                                            <li><Link href="/products?category=eco" className="hover:text-primary transition-colors">Eco Friendly</Link></li>
+                                            <li><Link href="/products?category=minimal" className="hover:text-[var(--primary)] transition-colors">Minimalist</Link></li>
+                                            <li><Link href="/products?category=luxury" className="hover:text-[var(--primary)] transition-colors">Luxury</Link></li>
+                                            <li><Link href="/products?category=eco" className="hover:text-[var(--primary)] transition-colors">Eco Friendly</Link></li>
                                         </ul>
                                     </div>
                                     <div className="bg-secondary p-4 flex flex-col justify-end aspect-square rounded-md overflow-hidden relative group/img">
@@ -97,8 +97,8 @@ export default function Header({ siteName = "ECOM" }: { siteName?: string }) {
                                 </div>
                             </div>
                         </div>
-                        <Link href="/categories" className="transition-colors hover:text-primary/60">Curations</Link>
-                        <Link href="/deals" className="transition-colors hover:text-primary/60 text-destructive">Archive</Link>
+                        <Link href="/categories" className="transition-colors hover:text-[var(--primary)]/60">Curations</Link>
+                        <Link href="/deals" className="transition-colors hover:text-[var(--primary)]/60 text-destructive">Archive</Link>
                     </nav>
                 </div>
 

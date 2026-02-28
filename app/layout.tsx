@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Inter, Playfair_Display, Poppins, Roboto } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
@@ -11,6 +11,20 @@ const inter = Inter({
 const playfair = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-serif",
+  display: "swap",
+});
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-poppins",
+  display: "swap",
+});
+
+const roboto = Roboto({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "700"],
+  variable: "--font-roboto",
   display: "swap",
 });
 
@@ -45,7 +59,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`min-h-screen bg-background font-sans antialiased ${inter.variable} ${playfair.variable}`}>
+      <body className={`min-h-screen bg-background font-sans antialiased ${inter.variable} ${playfair.variable} ${poppins.variable} ${roboto.variable}`}>
         <Providers>
           {children}
         </Providers>

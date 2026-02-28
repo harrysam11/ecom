@@ -24,7 +24,7 @@ export default function Hero() {
             <div className="container relative z-10 flex flex-col items-center text-center px-4">
                 <StaggerContainer delayChildren={0.2} staggerChildren={0.2}>
                     <FadeIn direction="up">
-                        <span className="mb-4 inline-block text-sm font-semibold uppercase tracking-[0.3em] text-primary/60">
+                        <span className="mb-4 inline-block text-sm font-semibold uppercase tracking-[0.3em] text-[var(--primary)] opacity-60">
                             The New Standard
                         </span>
                     </FadeIn>
@@ -41,7 +41,7 @@ export default function Hero() {
                     <FadeIn direction="up" delay={0.6}>
                         <div className="flex flex-col gap-4 sm:flex-row justify-center">
                             <Link href="/products">
-                                <Button size="lg" className="h-14 px-12 text-sm rounded-none bg-black text-white hover:bg-black/90 transition-all tracking-[0.2em] font-medium border-none shadow-xl">
+                                <Button size="lg" className="h-14 px-12 text-sm rounded-none tracking-[0.2em] font-medium border-none shadow-xl">
                                     SHOP NOW
                                 </Button>
                             </Link>

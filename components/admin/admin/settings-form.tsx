@@ -25,7 +25,11 @@ interface SettingsFormProps {
 export function SettingsForm({ initialData }: SettingsFormProps) {
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
-    const [formData, setFormData] = useState(initialData || {})
+    const [formData, setFormData] = useState(initialData || {
+        themeColor: "#000000",
+        fontFamily: "inter",
+        showNewsletter: true
+    })
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -169,6 +173,47 @@ export function SettingsForm({ initialData }: SettingsFormProps) {
                                 defaultValue={formData.footerText}
                                 placeholder="Thank you for your business!"
                             />
+                        </div>
+
+                        <div className="grid gap-6 md:grid-cols-2 pt-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="themeColor">Theme Color</Label>
+                                <div className="flex gap-4 items-center">
+                                    <Input
+                                        id="themeColor"
+                                        name="themeColor"
+                                        type="color"
+                                        defaultValue={formData.themeColor || "#000000"}
+                                        className="w-20 h-10 p-1 rounded-none border-black/10"
+                                    />
+                                    <span className="text-xs font-mono opacity-60 uppercase">{formData.themeColor || "#000000"}</span>
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="fontFamily">Font Family</Label>
+                                <select
+                                    id="fontFamily"
+                                    name="fontFamily"
+                                    defaultValue={formData.fontFamily || "inter"}
+                                    className="flex h-10 w-full border border-black/10 bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 rounded-none"
+                                >
+                                    <option value="inter">Sans (Inter)</option>
+                                    <option value="playfair">Serif (Playfair Display)</option>
+                                    <option value="poppins">Modern (Poppins)</option>
+                                    <option value="roboto">Classic (Roboto)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center space-x-2 pt-4">
+                            <input
+                                type="checkbox"
+                                id="showNewsletter"
+                                name="showNewsletter"
+                                defaultChecked={formData.showNewsletter ?? true}
+                                className="h-4 w-4 border-black/10 rounded-none"
+                            />
+                            <Label htmlFor="showNewsletter" className="text-sm font-medium">Show Newsletter Subscription on Storefront</Label>
                         </div>
                     </CardContent>
                 </Card>

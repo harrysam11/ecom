@@ -5,36 +5,36 @@ import { NextResponse } from "next/server"
 export async function middleware(request: NextRequest) {
     const { supabaseResponse, user } = await updateSession(request)
     const url = request.nextUrl
-    const hostname = request.headers.get("host") || ""
+    const hostnameWithPort = request.headers.get("host") || ""
+    const hostname = hostnameWithPort.split(":")[0]
 
     // Define domains to exclude from subdomain routing (e.g., your main marketing site)
-    const rootDomains = ["localhost:3000", "ecom-saas.com"]
+    const rootDomains = ["localhost", "ecom-saas.com"]
 
     let domain = ""
     if (rootDomains.includes(hostname)) {
-        // If accessing the root domain, we might want to show a landing page
-        // or default to a "main" store for now.
-        domain = "main"
+        // If accessing the root domain, we show the platform landing page
+        domain = "platform"
     } else {
         // Extract subdomain
-        domain = hostname.split(".")[0]
+        domain = hostnameWithPort.split(".")[0]
     }
 
     const path = url.pathname
 
     // Rewriting logic
-    if (path.startsWith("/admin")) {
-        // Admin routes: rewrite /admin/xxx -> /(admin)/[domain]/admin/xxx
-        // Note: app/(admin)/[domain]/admin is where we moved the admin-panel app
-        const searchParams = url.searchParams.toString()
-        const newPath = `/(admin)/${domain}${path}${searchParams ? `?${searchParams}` : ""}`
-
-        // Basic Auth Check for Admin
+    if (path.startsWith("/admin") || path.startsWith("/setup")) {
+        // Admin or Setup routes: basic Auth Check
         if (!user && !path.includes("/login")) {
             return NextResponse.redirect(new URL("/admin/login", request.url))
         }
 
-        return NextResponse.rewrite(new URL(newPath, request.url))
+        if (path.startsWith("/admin")) {
+            const searchParams = url.searchParams.toString()
+            // Next.js rewrites match logical paths, not folder structure (route groups are omitted)
+            const newPath = `/${domain}${path}${searchParams ? `?${searchParams}` : ""}`
+            return NextResponse.rewrite(new URL(newPath, request.url))
+        }
     }
 
     // API prefix handling (if any global APIs exist)
@@ -42,9 +42,9 @@ export async function middleware(request: NextRequest) {
         return supabaseResponse
     }
 
-    // Storefront routes: rewrite /xxx -> /(storefront)/[domain]/xxx
+    // Storefront routes: rewrite /xxx -> /[domain]/xxx
     const searchParams = url.searchParams.toString()
-    const newPath = `/(storefront)/${domain}${path}${searchParams ? `?${searchParams}` : ""}`
+    const newPath = `/${domain}${path === "/" ? "" : path}${searchParams ? `?${searchParams}` : ""}`
 
     return NextResponse.rewrite(new URL(newPath, request.url))
 }
