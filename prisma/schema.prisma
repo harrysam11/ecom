@@ -50,6 +50,10 @@ model Store {
   stripeCustomerId String?
   stripeSubscriptionId String?
   
+  // Merchant of Record (MoR) - Lemon Squeezy
+  morMerchantId   String?  // Store's Affiliate ID
+  morWebhookKey   String?  // Webhook signing secret
+  
   siteSettings    Settings?
   products        Product[]
   categories      Category[]
@@ -104,6 +108,7 @@ model Product {
   stock           Int              @default(0)
   images          String[]
   status          ProductStatus    @default(DRAFT)
+  morVariantId    String?          // Lemon Squeezy specific checkout link ID
   categoryId      String
   category        Category         @relation(fields: [categoryId], references: [id])
   storeId         String
