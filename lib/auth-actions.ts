@@ -62,3 +62,26 @@ export async function getUser() {
     const { data: { user } } = await supabase.auth.getUser()
     return user
 }
+
+export async function loginWithGoogle() {
+    const supabase = await createClient()
+
+    // We get the origin for redirecting back after Google Auth
+    const origin = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+            redirectTo: `${origin}/auth/callback`,
+        }
+    })
+
+    if (error) {
+        return { error: error.message }
+    }
+
+    // redirect to the provider's URL
+    if (data.url) {
+        redirect(data.url)
+    }
+}

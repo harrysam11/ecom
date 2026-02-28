@@ -42,6 +42,7 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s | ${siteName}`
     },
     description: settings?.metaDescription || "Experience premium shopping. Curated collection of tech, fashion, and lifestyle products.",
+    manifest: "/manifest.json",
     openGraph: {
       type: "website",
       locale: "en_US",
