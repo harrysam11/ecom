@@ -10,10 +10,13 @@ import Breadcrumbs from "@/components/shared/breadcrumbs"
 import { FadeIn, StaggerContainer } from "@/components/shared/animation-wrapper"
 import { prisma } from "@/lib/prisma"
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-    const { slug, domain } = await params
+export async function generateMetadata({ params }: { params: Promise<{ slug: string, domain: string }> }): Promise<Metadata> {
+    const { slug, domain } = await (params as any)
+    const store = await prisma.store.findUnique({ where: { subdomain: domain } })
+    if (!store) return { title: "Product Not Found" }
+
     const product = await prisma.product.findUnique({
-        where: { storeId_slug: { store: { subdomain: domain }, slug } }
+        where: { storeId_slug: { storeId: store.id, slug } }
     })
 
     if (!product) {
@@ -35,8 +38,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string, domain: string }> }) {
     const { slug, domain } = await params
+    const store = await prisma.store.findUnique({ where: { subdomain: domain } })
+    if (!store) notFound()
+
     const product = await prisma.product.findUnique({
-        where: { storeId_slug: { store: { subdomain: domain }, slug } },
+        where: { storeId_slug: { storeId: store.id, slug } },
         include: {
             category: true
         }

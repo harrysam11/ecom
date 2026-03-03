@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { notFound } from "next/navigation"
-import { CouponForm } from "@/components/admin/coupon-form"
+import { CouponForm } from "@/components/admin/admin/coupon-form"
 
 export default async function CouponEditPage({ params }: { params: { id: string } }) {
     const coupon = await prisma.coupon.findUnique({

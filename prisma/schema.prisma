@@ -34,8 +34,47 @@ model User {
   carts         Cart[]
   wishlists     Wishlist[]
   storeUsers    StoreUser[]
+  auditLogs     AuditLog[]
+  reviews       Review[]
+  accounts      Account[]
+  sessions      Session[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
 
 model Store {
@@ -62,6 +101,8 @@ model Store {
   storeUsers      StoreUser[]
   carts           Cart[]
   wishlists       Wishlist[]
+  shippingZones   ShippingZone[]
+  reviews         Review[]
   
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
@@ -119,6 +160,8 @@ model Product {
   orderItems      OrderItem[]
   cartItems       CartItem[]
   wishlistItems   WishlistItem[]
+  inventoryLogs   InventoryLog[]
+  reviews         Review[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
@@ -126,6 +169,16 @@ model Product {
   @@index([categoryId])
   @@index([storeId])
   @@index([status])
+}
+
+model InventoryLog {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  change    Int
+  createdAt DateTime @default(now())
+
+  @@index([productId])
 }
 
 enum ProductStatus {
@@ -144,15 +197,31 @@ model Order {
   items         OrderItem[]
   total         Decimal     @db.Decimal(10, 2)
   commissionFee Decimal     @db.Decimal(10, 2) @default(0)
-  status        OrderStatus @default(PENDING)
+  status          OrderStatus @default(PENDING)
+  trackingNumber  String?     @default("")
+  courierName     String?     @default("")
+  payments        Payment[]
   addressId     String?
   address       Address?    @relation(fields: [addressId], references: [id])
+  returnRequests ReturnRequest[]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
   @@index([userId])
   @@index([storeId])
   @@index([status])
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount        Decimal  @db.Decimal(10, 2)
+  status        String   // PENDING, PAID, FAILED
+  paymentMethod String?
+  createdAt     DateTime @default(now())
+
+  @@index([orderId])
 }
 
 enum OrderStatus {
@@ -270,8 +339,40 @@ model Settings {
   themeColor      String   @default("#000000")
   fontFamily      String   @default("inter")
   showNewsletter  Boolean  @default(true)
+  isCODEnabled    Boolean  @default(true)
   paymentGateway  String?  // stripe, paypal, etc.
   updatedAt       DateTime @updatedAt
+
+  @@index([storeId])
+}
+
+model ShippingZone {
+  id        String         @id @default(cuid())
+  name      String
+  countries String[]
+  states    String[]
+  rates     ShippingRate[]
+  storeId   String
+  store     Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([storeId])
+}
+
+model ShippingRate {
+  id            String       @id @default(cuid())
+  name          String
+  flatPrice     Decimal      @db.Decimal(10, 2)
+  minWeight     Decimal      @db.Decimal(10, 2) @default(0)
+  maxWeight     Decimal?     @db.Decimal(10, 2)
+  estimatedDays String?
+  zoneId        String
+  zone          ShippingZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([zoneId])
 }
 
 model EmailLog {
@@ -281,4 +382,61 @@ model EmailLog {
   template  String
   status    String
   createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String
+  entity    String
+  entityId  String
+  details   Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String
+  status    ReviewStatus @default(PENDING)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId])
+  @@index([userId])
+  @@index([storeId])
+  @@index([status])
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model ReturnRequest {
+  id        String       @id @default(cuid())
+  orderId   String
+  order     Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  reason    String
+  status    ReturnStatus @default(PENDING)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([orderId])
+}
+
+enum ReturnStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }

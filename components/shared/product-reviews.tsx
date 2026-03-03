@@ -25,11 +25,11 @@ export default async function ProductReviews({ productId }: ProductReviewsProps)
 
     const totalReviews = reviews.length
     const averageRating = totalReviews > 0
-        ? (reviews.reduce((acc: number, review) => acc + review.rating, 0) / totalReviews).toFixed(1)
+        ? (reviews.reduce((acc: number, review: any) => acc + review.rating, 0) / totalReviews).toFixed(1)
         : "0.0"
 
-    const ratingDistribution = [5, 4, 3, 2, 1].map(rating => {
-        const count = reviews.filter(r => r.rating === rating).length
+    const ratingDistribution = [5, 4, 3, 2, 1].map((rating: number) => {
+        const count = reviews.filter((r: any) => r.rating === rating).length
         const percentage = totalReviews > 0 ? (count / totalReviews) * 100 : 0
         return { rating, count, percentage }
     })
@@ -69,7 +69,7 @@ export default async function ProductReviews({ productId }: ProductReviewsProps)
                     {reviews.length === 0 ? (
                         <p className="text-muted-foreground italic font-light">No reviews yet for this product. Be the first to share your thoughts!</p>
                     ) : (
-                        reviews.map((review) => (
+                        reviews.map((review: any) => (
                             <div key={review.id} className="space-y-2">
                                 <div className="flex items-center gap-2">
                                     <Avatar className="h-8 w-8">

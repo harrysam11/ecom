@@ -12,7 +12,7 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { deleteProduct } from "@/lib/actions"
+import { deleteProduct } from "@/lib/admin-actions"
 
 import Link from "next/link"
 

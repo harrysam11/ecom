@@ -49,13 +49,14 @@ export default function Dashboard() {
         startTransition(async () => {
             const result = await createProduct({
                 name: formData.get("name") as string,
-                slug: (formData.get("name") as string).toLowerCase().replace(/ /g, "-"), // Simple slugification for MVP
+                slug: (formData.get("name") as string).toLowerCase().replace(/ /g, "-"),
                 description: formData.get("description") as string,
                 price: Number(formData.get("price")),
                 stock: Number(formData.get("stock")),
+                lowStockThreshold: 10,
                 categoryId: selectedCategory,
                 status: status.toUpperCase() as any,
-                images: [], // Placeholder for now
+                images: [],
             })
             if (result.success) {
                 toast.success("Product created successfully")

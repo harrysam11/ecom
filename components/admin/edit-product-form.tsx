@@ -26,7 +26,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { updateProduct, getCategories } from "@/lib/actions"
+import { updateProduct, getCategories } from "@/lib/admin-actions"
 
 interface EditProductFormProps {
     product: any
@@ -50,7 +50,18 @@ export function EditProductForm({ product }: EditProductFormProps) {
         formData.append("status", status.toUpperCase())
 
         startTransition(async () => {
-            const result = await updateProduct(product.id, formData)
+            const data = {
+                name: formData.get("name") as string,
+                slug: product.slug, // Keep original slug on edit
+                description: formData.get("description") as string,
+                price: parseFloat(formData.get("price") as string),
+                stock: parseInt(formData.get("stock") as string),
+                lowStockThreshold: product.lowStockThreshold || 10,
+                categoryId: selectedCategory,
+                status: status.toUpperCase() as any,
+                images: product.images,
+            }
+            const result = await updateProduct(product.id, data)
             if (result.error) {
                 if (typeof result.error === "string") {
                     toast.error(result.error)

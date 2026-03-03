@@ -1,5 +1,7 @@
 import { defaultCache } from "@serwist/next/worker";
+// @ts-ignore
 import type { PrecacheEntry, SerwistGlobalConfig } from "@serwist/precaching";
+// @ts-ignore
 import { Serwist } from "@serwist/sw";
 
 declare global {
@@ -8,7 +10,7 @@ declare global {
     }
 }
 
-declare const self: ServiceWorkerGlobalScope;
+declare const self: any;
 
 const serwist = new Serwist({
     precacheEntries: self.__SW_MANIFEST,

@@ -9,18 +9,22 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Truck, Plus, Trash2, Globe } from "lucide-react"
-import { ShippingZoneForm } from "@/components/admin/shipping-zone-form"
-import { ShippingRateForm } from "@/components/admin/shipping-rate-form"
-import { CODSettingToggle } from "@/components/admin/cod-setting-toggle"
+import { ShippingZoneForm } from "@/components/admin/admin/shipping-zone-form"
+import { ShippingRateForm } from "@/components/admin/admin/shipping-rate-form"
+import { CODSettingToggle } from "@/components/admin/admin/cod-setting-toggle"
+
+import { getStoreOrThrow } from "@/lib/store"
 
 export default async function ShippingSettingsPage() {
+    const store = await getStoreOrThrow()
     const zones = await prisma.shippingZone.findMany({
+        where: { storeId: store.id },
         include: { rates: true },
         orderBy: { createdAt: "desc" }
     })
 
     const settings = await prisma.settings.findUnique({
-        where: { id: "site-settings" }
+        where: { storeId: store.id }
     })
 
     return (

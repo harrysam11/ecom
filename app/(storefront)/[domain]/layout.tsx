@@ -8,7 +8,7 @@ export default async function StorefrontLayout({
     params,
 }: {
     children: React.ReactNode
-    params: { domain: string }
+    params: Promise<{ domain: string }>
 }) {
     const { domain } = await params
     const settings = await getSettings(domain)

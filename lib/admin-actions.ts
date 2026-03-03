@@ -20,6 +20,16 @@ const productSchema = z.object({
     metaDescription: z.string().optional().nullable(),
 })
 
+const couponSchema = z.object({
+    code: z.string().min(1, "Code is required").toUpperCase(),
+    discountType: z.enum(["PERCENTAGE", "FIXED"]),
+    discountValue: z.number().min(0),
+    minCartValue: z.number().nullable().optional(),
+    usageLimit: z.number().int().nullable().optional(),
+    expiresAt: z.string().min(1, "Expiration date is required"),
+    isActive: z.boolean().default(true),
+})
+
 export async function createProduct(data: z.infer<typeof productSchema>) {
     try {
         const store = await getStoreOrThrow()
@@ -222,6 +232,121 @@ export async function updateSettings(data: any) {
         return { success: true, settings }
     } catch (error: any) {
         console.error("Failed to update settings:", error)
+        return { success: false, error: error.message }
+    }
+}
+
+export async function createCoupon(data: z.infer<typeof couponSchema>) {
+    try {
+        const store = await getStoreOrThrow()
+        const coupon = await prisma.coupon.create({
+            data: {
+                ...data,
+                storeId: store.id,
+                expiresAt: new Date(data.expiresAt),
+            }
+        })
+        revalidatePath("/coupons")
+        // @ts-ignore
+        revalidateTag("coupons")
+        return { success: true, coupon }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+export async function updateCoupon(id: string, data: z.infer<typeof couponSchema>) {
+    try {
+        const store = await getStoreOrThrow()
+        const coupon = await prisma.coupon.update({
+            where: { id, storeId: store.id },
+            data: {
+                ...data,
+                expiresAt: new Date(data.expiresAt),
+            }
+        })
+        revalidatePath("/coupons")
+        // @ts-ignore
+        revalidateTag("coupons")
+        return { success: true, coupon }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+export async function deleteCoupon(id: string) {
+    try {
+        const store = await getStoreOrThrow()
+        await prisma.coupon.delete({
+            where: { id, storeId: store.id }
+        })
+        revalidatePath("/coupons")
+        // @ts-ignore
+        revalidateTag("coupons")
+        return { success: true }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+export async function createShippingZone(data: any) {
+    try {
+        const store = await getStoreOrThrow()
+        const zone = await prisma.shippingZone.create({
+            data: {
+                ...data,
+                storeId: store.id
+            }
+        })
+        revalidatePath("/admin/settings/shipping")
+        return { success: true, zone }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+export async function createShippingRate(data: any) {
+    try {
+        await getStoreOrThrow()
+        const rate = await prisma.shippingRate.create({
+            data: {
+                ...data
+            }
+        })
+        revalidatePath("/admin/settings/shipping")
+        return { success: true, rate }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+export async function updateCODSettings(isEnabled: boolean) {
+    try {
+        const store = await getStoreOrThrow()
+        await prisma.settings.update({
+            where: { storeId: store.id },
+            data: { isCODEnabled: isEnabled }
+        })
+        revalidatePath("/admin/settings/shipping")
+        return { success: true }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+export async function updateOrderTracking(orderId: string, trackingNumber: string, courierName: string) {
+    try {
+        const store = await getStoreOrThrow()
+        await prisma.order.update({
+            where: { id: orderId, storeId: store.id },
+            data: {
+                trackingNumber,
+                courierName
+            }
+        })
+        revalidatePath("/admin/orders")
+        return { success: true }
+    } catch (error: any) {
         return { success: false, error: error.message }
     }
 }

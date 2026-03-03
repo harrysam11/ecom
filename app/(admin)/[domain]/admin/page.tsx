@@ -16,7 +16,12 @@ import { SalesChart } from "@/components/admin/sales-chart"
 import { format } from "date-fns"
 import { getStoreOrThrow } from "@/lib/store"
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+    params
+}: {
+    params: Promise<{ domain: string }>
+}) {
+    const { domain } = await params
     const store = await getStoreOrThrow()
 
     // 1. Fetch Total Revenue
