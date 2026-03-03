@@ -1,5 +1,5 @@
 import { getSettings } from "@/lib/admin-actions"
-import { SettingsForm } from "@/components/admin/settings-form"
+import { SettingsForm } from "@/components/admin/admin/settings-form"
 
 export default async function SettingsPage() {
     const settings = await getSettings()

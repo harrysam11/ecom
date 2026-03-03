@@ -65,7 +65,6 @@ interface Product {
     metaTitle?: string | null
     metaDescription?: string | null
     images: string[]
-    images: string[]
 }
 
 interface ProductFormProps {

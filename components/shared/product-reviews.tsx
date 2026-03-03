@@ -25,7 +25,7 @@ export default async function ProductReviews({ productId }: ProductReviewsProps)
 
     const totalReviews = reviews.length
     const averageRating = totalReviews > 0
-        ? (reviews.reduce((acc, review) => acc + review.rating, 0) / totalReviews).toFixed(1)
+        ? (reviews.reduce((acc: number, review) => acc + review.rating, 0) / totalReviews).toFixed(1)
         : "0.0"
 
     const ratingDistribution = [5, 4, 3, 2, 1].map(rating => {

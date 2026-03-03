@@ -12,9 +12,12 @@ const productSchema = z.object({
     description: z.string().min(1, "Description is required"),
     price: z.number().min(0, "Price must be positive"),
     stock: z.number().int().min(0, "Stock must be positive"),
+    lowStockThreshold: z.number().int().min(0).default(10),
     categoryId: z.string().min(1, "Category is required"),
     images: z.array(z.string()).default([]),
     status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).default("DRAFT"),
+    metaTitle: z.string().optional().nullable(),
+    metaDescription: z.string().optional().nullable(),
 })
 
 export async function createProduct(data: z.infer<typeof productSchema>) {
@@ -38,6 +41,7 @@ export async function createProduct(data: z.infer<typeof productSchema>) {
         })
 
         revalidatePath("/products")
+        // @ts-ignore
         revalidateTag("products")
         return { success: true, product }
     } catch (error: any) {
@@ -57,6 +61,7 @@ export async function updateProduct(id: string, data: z.infer<typeof productSche
         })
 
         revalidatePath("/products")
+        // @ts-ignore
         revalidateTag("products")
         return { success: true, product }
     } catch (error: any) {
@@ -72,6 +77,7 @@ export async function deleteProduct(id: string) {
             where: { id, storeId: store.id }
         })
         revalidatePath("/products")
+        // @ts-ignore
         revalidateTag("products")
         return { success: true }
     } catch (error: any) {
@@ -97,6 +103,7 @@ export async function createCategory(data: z.infer<typeof categorySchema>) {
             }
         })
         revalidatePath("/categories")
+        // @ts-ignore
         revalidateTag("categories")
         return { success: true, category }
     } catch (error: any) {
@@ -115,6 +122,7 @@ export async function updateCategory(id: string, data: z.infer<typeof categorySc
             }
         })
         revalidatePath("/categories")
+        // @ts-ignore
         revalidateTag("categories")
         return { success: true, category }
     } catch (error: any) {
@@ -129,6 +137,7 @@ export async function deleteCategory(id: string) {
             where: { id, storeId: store.id }
         })
         revalidatePath("/categories")
+        // @ts-ignore
         revalidateTag("categories")
         return { success: true }
     } catch (error: any) {

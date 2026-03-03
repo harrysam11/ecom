@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { createStore } from "@/lib/store-actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

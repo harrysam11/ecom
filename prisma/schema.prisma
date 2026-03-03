@@ -106,8 +106,11 @@ model Product {
   description     String
   price           Decimal          @db.Decimal(10, 2)
   stock           Int              @default(0)
+  lowStockThreshold Int            @default(10)
   images          String[]
   status          ProductStatus    @default(DRAFT)
+  metaTitle       String?
+  metaDescription String?
   morVariantId    String?          // Lemon Squeezy specific checkout link ID
   categoryId      String
   category        Category         @relation(fields: [categoryId], references: [id])
@@ -232,6 +235,7 @@ model Coupon {
   code          String
   discountType  DiscountType @default(FIXED)
   discountValue Decimal  @db.Decimal(10, 2)
+  minCartValue  Decimal? @db.Decimal(10, 2)
   usageLimit    Int?
   usageCount    Int      @default(0)
   expiresAt     DateTime
@@ -268,4 +272,13 @@ model Settings {
   showNewsletter  Boolean  @default(true)
   paymentGateway  String?  // stripe, paypal, etc.
   updatedAt       DateTime @updatedAt
+}
+
+model EmailLog {
+  id        String   @id @default(cuid())
+  to        String
+  subject   String
+  template  String
+  status    String
+  createdAt DateTime @default(now())
 }
