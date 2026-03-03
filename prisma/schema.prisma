@@ -255,6 +255,13 @@ model Settings {
   storeId         String   @unique
   store           Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   siteName        String   @default("My Store")
+  companyName     String?
+  taxPercentage   Float?   @default(0)
+  email           String?
+  phone           String?
+  address         String?
+  metaTitle       String?
+  metaDescription String?
   footerText      String?
   themeColor      String   @default("#000000")
   fontFamily      String   @default("inter")

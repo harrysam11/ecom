@@ -197,11 +197,15 @@ export async function updateSettings(data: any) {
         const settings = await prisma.settings.upsert({
             where: { storeId: store.id },
             update: {
-                ...settingsData
+                ...settingsData,
+                taxPercentage: settingsData.taxPercentage ? parseFloat(settingsData.taxPercentage) : 0,
+                showNewsletter: settingsData.showNewsletter === 'on' || settingsData.showNewsletter === 'true' || settingsData.showNewsletter === true,
             },
             create: {
                 storeId: store.id,
-                ...settingsData
+                ...settingsData,
+                taxPercentage: settingsData.taxPercentage ? parseFloat(settingsData.taxPercentage) : 0,
+                showNewsletter: settingsData.showNewsletter === 'on' || settingsData.showNewsletter === 'true' || settingsData.showNewsletter === true,
             }
         })
         revalidatePath("/(admin)", "layout")
