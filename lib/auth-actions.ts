@@ -1,21 +1,25 @@
 "use server"
 
-import { createClient } from "@/utils/supabase/server"
+import { signIn, signOut, auth } from "@/auth"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+import { isRedirectError } from "next/dist/client/components/redirect-error"
 
 export async function login(formData: FormData) {
-    const supabase = await createClient()
+    const email = formData.get("email") as string
+    const password = formData.get("password") as string
 
-    const data = {
-        email: formData.get("email") as string,
-        password: formData.get("password") as string,
-    }
-
-    const { error } = await supabase.auth.signInWithPassword(data)
-
-    if (error) {
-        return { error: error.message }
+    try {
+        await signIn("credentials", {
+            email,
+            password,
+            redirect: false,
+        })
+    } catch (error) {
+        if (isRedirectError(error)) {
+            throw error
+        }
+        return { error: "Invalid credentials." }
     }
 
     revalidatePath("/", "layout")
@@ -23,65 +27,26 @@ export async function login(formData: FormData) {
 }
 
 export async function signup(formData: FormData) {
-    const supabase = await createClient()
-
-    const data = {
-        email: formData.get("email") as string,
-        password: formData.get("password") as string,
-        options: {
-            data: {
-                role: "CUSTOMER",
-            },
-        },
-    }
-
-    const { error } = await supabase.auth.signUp(data)
-
-    if (error) {
-        return { error: error.message }
-    }
-
-    revalidatePath("/", "layout")
-    return { success: true }
+    // For testing/Prisma, we'd need a custom signup logic that creates a user in Prisma
+    // Since the user just wants to test with seeded credentials, let's keep it simple
+    return { error: "Signup is currently disabled for testing. Use seeded credentials." }
 }
 
 export async function logout() {
-    const supabase = await createClient()
-    const { error } = await supabase.auth.signOut()
-
-    if (error) {
-        return { error: error.message }
-    }
-
-    revalidatePath("/", "layout")
-    redirect("/login")
-}
-
-export async function getUser() {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    return user
+    await signOut({ redirectTo: "/login" })
 }
 
 export async function loginWithGoogle() {
-    const supabase = await createClient()
-
-    // We get the origin for redirecting back after Google Auth
-    const origin = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-
-    const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-            redirectTo: `${origin}/auth/callback`,
+    try {
+        await signIn("google")
+    } catch (error) {
+        if (isRedirectError(error)) {
+            throw error
         }
-    })
-
-    if (error) {
-        return { error: error.message }
+        return { error: "Google login failed." }
     }
-
-    // redirect to the provider's URL
-    if (data.url) {
-        redirect(data.url)
-    }
+}
+export async function getUser() {
+    const session = await auth()
+    return session?.user
 }

@@ -27,6 +27,8 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { updateProduct, getCategories } from "@/lib/admin-actions"
+import { ProductVariants } from "./product-variants"
+import { AIDescriptionHelper } from "./ai-description-helper"
 
 interface EditProductFormProps {
     product: any
@@ -38,6 +40,7 @@ export function EditProductForm({ product }: EditProductFormProps) {
     const [categories, setCategories] = useState<{ id: string, name: string }[]>([])
     const [selectedCategory, setSelectedCategory] = useState<string>(product.categoryId)
     const [status, setStatus] = useState<string>(product.status.toLowerCase())
+    const [variants, setVariants] = useState<any[]>(product.variants || [])
 
     useEffect(() => {
         getCategories().then(setCategories)
@@ -60,6 +63,7 @@ export function EditProductForm({ product }: EditProductFormProps) {
                 categoryId: selectedCategory,
                 status: status.toUpperCase() as any,
                 images: product.images,
+                variants: variants,
             }
             const result = await updateProduct(product.id, data)
             if (result.error) {
@@ -127,7 +131,16 @@ export function EditProductForm({ product }: EditProductFormProps) {
                                                 />
                                             </div>
                                             <div className="grid gap-3">
-                                                <Label htmlFor="description">Description</Label>
+                                                <div className="flex items-center justify-between">
+                                                    <Label htmlFor="description">Description</Label>
+                                                    <AIDescriptionHelper
+                                                        productName={product.name}
+                                                        onGenerated={(desc) => {
+                                                            const el = document.getElementById("description") as HTMLTextAreaElement
+                                                            if (el) el.value = desc
+                                                        }}
+                                                    />
+                                                </div>
                                                 <Textarea
                                                     id="description"
                                                     name="description"
@@ -172,6 +185,10 @@ export function EditProductForm({ product }: EditProductFormProps) {
                                         </div>
                                     </CardContent>
                                 </Card>
+                                <ProductVariants
+                                    initialVariants={variants}
+                                    onChange={setVariants}
+                                />
                             </div>
                             <div className="grid auto-rows-max items-start gap-4 lg:gap-8">
                                 <Card>

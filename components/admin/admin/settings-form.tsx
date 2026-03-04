@@ -176,91 +176,114 @@ export function SettingsForm({ initialData }: SettingsFormProps) {
                                 />
                             </div>
                         </div>
+                            />
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2 pt-4 border-t">
                         <div className="space-y-2">
-                            <Label htmlFor="footerText">Invoice Footer Text</Label>
+                            <Label htmlFor="brandText">Brand Text / Logo Text</Label>
+                            <Input
+                                id="brandText"
+                                name="brandText"
+                                defaultValue={formData.brandText}
+                                placeholder="Premium Ecom"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="bannerTitle">Home Banner Title</Label>
+                            <Input
+                                id="bannerTitle"
+                                name="bannerTitle"
+                                defaultValue={formData.bannerTitle}
+                                placeholder="Summer Collection"
+                            />
+                        </div>
+                        <div className="md:col-span-2 space-y-2">
+                            <Label htmlFor="bannerSubtitle">Home Banner Subtitle</Label>
                             <Textarea
-                                id="footerText"
-                                name="footerText"
-                                defaultValue={formData.footerText}
-                                placeholder="Thank you for your business!"
+                                id="bannerSubtitle"
+                                name="bannerSubtitle"
+                                defaultValue={formData.bannerSubtitle}
+                                placeholder="Describe your flagship collection..."
                             />
                         </div>
+                    </div>
 
-                        <div className="grid gap-6 md:grid-cols-2 pt-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="themeColor">Theme Color</Label>
-                                <div className="flex gap-4 items-center">
-                                    <Input
-                                        id="themeColor"
-                                        name="themeColor"
-                                        type="color"
-                                        value={formData.themeColor || "#000000"}
-                                        onChange={(e) => setFormData({ ...formData, themeColor: e.target.value })}
-                                        className="w-20 h-10 p-1 rounded-none border-black/10"
-                                    />
-                                    <span className="text-xs font-mono opacity-60 uppercase">{formData.themeColor || "#000000"}</span>
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="fontFamily">Font Family</Label>
-                                <select
-                                    id="fontFamily"
-                                    name="fontFamily"
-                                    value={formData.fontFamily || "inter"}
-                                    onChange={(e) => setFormData({ ...formData, fontFamily: e.target.value })}
-                                    className="flex h-10 w-full border border-black/10 bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 rounded-none"
-                                >
-                                    <option value="inter">Sans (Inter)</option>
-                                    <option value="playfair">Serif (Playfair Display)</option>
-                                    <option value="poppins">Modern (Poppins)</option>
-                                    <option value="roboto">Classic (Roboto)</option>
-                                </select>
+                    <div className="grid gap-6 md:grid-cols-2 pt-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="themeColor">Theme Color</Label>
+                            <div className="flex gap-4 items-center">
+                                <Input
+                                    id="themeColor"
+                                    name="themeColor"
+                                    type="color"
+                                    value={formData.themeColor || "#000000"}
+                                    onChange={(e) => setFormData({ ...formData, themeColor: e.target.value })}
+                                    className="w-20 h-10 p-1 rounded-none border-black/10"
+                                />
+                                <span className="text-xs font-mono opacity-60 uppercase">{formData.themeColor || "#000000"}</span>
                             </div>
                         </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="fontFamily">Font Family</Label>
+                            <select
+                                id="fontFamily"
+                                name="fontFamily"
+                                value={formData.fontFamily || "inter"}
+                                onChange={(e) => setFormData({ ...formData, fontFamily: e.target.value })}
+                                className="flex h-10 w-full border border-black/10 bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 rounded-none"
+                            >
+                                <option value="inter">Sans (Inter)</option>
+                                <option value="playfair">Serif (Playfair Display)</option>
+                                <option value="poppins">Modern (Poppins)</option>
+                                <option value="roboto">Classic (Roboto)</option>
+                            </select>
+                        </div>
+                    </div>
 
-                        <div className="flex items-center space-x-2 pt-4">
-                            <input
-                                type="checkbox"
-                                id="showNewsletter"
-                                name="showNewsletter"
-                                defaultChecked={formData.showNewsletter ?? true}
-                                className="h-4 w-4 border-black/10 rounded-none"
+                    <div className="flex items-center space-x-2 pt-4">
+                        <input
+                            type="checkbox"
+                            id="showNewsletter"
+                            name="showNewsletter"
+                            defaultChecked={formData.showNewsletter ?? true}
+                            className="h-4 w-4 border-black/10 rounded-none"
+                        />
+                        <Label htmlFor="showNewsletter" className="text-sm font-medium">Show Newsletter Subscription on Storefront</Label>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card className="md:col-span-2 border-primary/20">
+                <CardHeader>
+                    <CardTitle>Payment Gateway (Lemon Squeezy)</CardTitle>
+                    <CardDescription>Configure your Merchant of Record affiliation to accept payments securely.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                            <Label htmlFor="morMerchantId">Lemon Squeezy Affiliate / Store ID</Label>
+                            <Input
+                                id="morMerchantId"
+                                name="morMerchantId"
+                                defaultValue={formData?.morMerchantId || ""}
+                                placeholder="e.g. 12345"
                             />
-                            <Label htmlFor="showNewsletter" className="text-sm font-medium">Show Newsletter Subscription on Storefront</Label>
                         </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="md:col-span-2 border-primary/20">
-                    <CardHeader>
-                        <CardTitle>Payment Gateway (Lemon Squeezy)</CardTitle>
-                        <CardDescription>Configure your Merchant of Record affiliation to accept payments securely.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid gap-4 md:grid-cols-2">
-                            <div className="space-y-2">
-                                <Label htmlFor="morMerchantId">Lemon Squeezy Affiliate / Store ID</Label>
-                                <Input
-                                    id="morMerchantId"
-                                    name="morMerchantId"
-                                    defaultValue={formData?.morMerchantId || ""}
-                                    placeholder="e.g. 12345"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="morWebhookKey">Webhook Signing Secret</Label>
-                                <Input
-                                    id="morWebhookKey"
-                                    name="morWebhookKey"
-                                    type="password"
-                                    defaultValue={formData?.morWebhookKey || ""}
-                                    placeholder="Enter your secure secret"
-                                />
-                            </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="morWebhookKey">Webhook Signing Secret</Label>
+                            <Input
+                                id="morWebhookKey"
+                                name="morWebhookKey"
+                                type="password"
+                                defaultValue={formData?.morWebhookKey || ""}
+                                placeholder="Enter your secure secret"
+                            />
                         </div>
-                    </CardContent>
-                </Card>
-            </div>
-        </form>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+        </form >
     )
 }

@@ -104,6 +104,9 @@ model Store {
   shippingZones   ShippingZone[]
   reviews         Review[]
   
+  // Plugins & Customization
+  activePlugins   String[] @default([]) // e.g., ["whatsapp", "analytics-pro"]
+  
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 }
@@ -115,6 +118,7 @@ model StoreUser {
   storeId   String
   store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   role      Role     @default(STORE_STAFF)
+  permissions Json?    // { "products": ["view", "edit"], "orders": ["view"] }
   createdAt DateTime @default(now())
 
   @@unique([userId, storeId])
@@ -162,6 +166,7 @@ model Product {
   wishlistItems   WishlistItem[]
   inventoryLogs   InventoryLog[]
   reviews         Review[]
+  variants        ProductVariant[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
@@ -181,6 +186,18 @@ model InventoryLog {
   @@index([productId])
 }
 
+model ProductVariant {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String // e.g., "Size: XL", "Color: Blue"
+  price     Decimal? @db.Decimal(10, 2)
+  stock     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
 enum ProductStatus {
   DRAFT
   PUBLISHED
@@ -198,8 +215,14 @@ model Order {
   total         Decimal     @db.Decimal(10, 2)
   commissionFee Decimal     @db.Decimal(10, 2) @default(0)
   status          OrderStatus @default(PENDING)
+  paymentStatus   PaymentStatus @default(UNPAID)
+  paymentId       String?
   trackingNumber  String?     @default("")
   courierName     String?     @default("")
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  shipmentStatus  String?
+  invoiceUrl      String?
   payments        Payment[]
   addressId     String?
   address       Address?    @relation(fields: [addressId], references: [id])
@@ -211,6 +234,14 @@ model Order {
   @@index([storeId])
   @@index([status])
 }
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  FAILED
+  REFUNDED
+}
+
 
 model Payment {
   id            String   @id @default(cuid())
@@ -338,6 +369,12 @@ model Settings {
   footerText      String?
   themeColor      String   @default("#000000")
   fontFamily      String   @default("inter")
+  
+  // Brand & Content
+  bannerTitle     String?  @default("Premium Collection")
+  bannerSubtitle  String?  @default("Experience the finest selection of curated products.")
+  brandText       String?  @default("Premium Ecom")
+  
   showNewsletter  Boolean  @default(true)
   isCODEnabled    Boolean  @default(true)
   paymentGateway  String?  // stripe, paypal, etc.

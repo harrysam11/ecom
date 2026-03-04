@@ -2,19 +2,35 @@ const { PrismaClient } = require("@prisma/client")
 const prisma = new PrismaClient()
 
 async function main() {
+    console.log("Seeding store...")
+    const store = await prisma.store.upsert({
+        where: { subdomain: "admin" },
+        update: {},
+        create: {
+            name: "Main Store",
+            subdomain: "admin",
+            plan: "PREMIUM",
+        },
+    })
+
     const categories = [
-        { name: "Electronics", slug: "electronics" },
-        { name: "Clothing", slug: "clothing" },
-        { name: "Home & Kitchen", slug: "home-kitchen" },
-        { name: "Books", slug: "books" },
-        { name: "Sports & Outdoors", slug: "sports-outdoors" },
+        { name: "Electronics", slug: "electronics", storeId: store.id },
+        { name: "Clothing", slug: "clothing", storeId: store.id },
+        { name: "Home & Kitchen", slug: "home-kitchen", storeId: store.id },
+        { name: "Books", slug: "books", storeId: store.id },
+        { name: "Sports & Outdoors", slug: "sports-outdoors", storeId: store.id },
     ]
 
     console.log("Seeding categories...")
 
     for (const category of categories) {
         await prisma.category.upsert({
-            where: { name: category.name },
+            where: {
+                storeId_name: {
+                    storeId: store.id,
+                    name: category.name
+                }
+            },
             update: {},
             create: category,
         })
@@ -29,15 +45,56 @@ async function main() {
         update: {},
         create: {
             email: "admin@ecom.com",
-            name: "Admin User",
+            name: "Platform Admin",
             password: hashedPassword,
-            role: "ADMIN",
+            role: "SUPER_ADMIN",
             emailVerified: new Date(),
         },
     })
 
+    console.log("Seeding store owner...")
+    const ownerPassword = await bcrypt.hash("owner123", 10)
+    const owner = await prisma.user.upsert({
+        where: { email: "owner@ecom.com" },
+        update: {},
+        create: {
+            email: "owner@ecom.com",
+            name: "Store Owner",
+            password: ownerPassword,
+            role: "STORE_OWNER",
+            emailVerified: new Date(),
+        },
+    })
+
+    // Link owner to the store
+    await prisma.storeUser.upsert({
+        where: { userId_storeId: { userId: owner.id, storeId: store.id } },
+        update: {},
+        create: {
+            userId: owner.id,
+            storeId: store.id,
+            role: "STORE_OWNER",
+        },
+    })
+
+    console.log("Seeding customer...")
+    const customerPassword = await bcrypt.hash("customer123", 10)
+    await prisma.user.upsert({
+        where: { email: "user@ecom.com" },
+        update: {},
+        create: {
+            email: "user@ecom.com",
+            name: "Test Customer",
+            password: customerPassword,
+            role: "CUSTOMER",
+            emailVerified: new Date(),
+        },
+    })
+
+
     console.log("Seeding finished.")
 }
+
 
 main()
     .catch((e) => {

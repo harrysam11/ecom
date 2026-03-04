@@ -10,6 +10,7 @@ import {
     Users,
     Settings,
     LineChart,
+    Blocks,
 } from "lucide-react"
 
 const sidebarItems = [
@@ -37,6 +38,16 @@ const sidebarItems = [
         title: "Analytics",
         href: "/admin/analytics",
         icon: LineChart,
+    },
+    {
+        title: "Apps",
+        href: "/admin/apps",
+        icon: Blocks,
+    },
+    {
+        title: "Staff",
+        href: "/admin/staff",
+        icon: Users,
     },
     {
         title: "Settings",

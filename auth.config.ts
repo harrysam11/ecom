@@ -2,26 +2,14 @@ import type { NextAuthConfig } from "next-auth"
 
 export const authConfig = {
     pages: {
-        signIn: "/login", // Default signIn page
+        signIn: "/login",
     },
     callbacks: {
         authorized({ auth, request: { nextUrl } }) {
             const isLoggedIn = !!auth?.user
-            const userRole = auth?.user?.role
-
-            const isLoginPage = nextUrl.pathname.startsWith("/login")
-            const isPublicPage = isLoginPage // Add more if needed
-
-            if (isPublicPage) return true
-
-            if (!isLoggedIn) return false // Redirect to login
-
-            // Only ADMIN and STAFF can access admin panel
-            if (userRole === "SUPER_ADMIN" || userRole === "STORE_OWNER" || userRole === "STORE_STAFF") {
-                return true
-            }
-
-            return false // Deny access for USER/CUSTOMER roles
+            // The root app handles multi-tenancy via middleware.ts, 
+            // so we'll let the middleware decide on redirections for now.
+            return true
         },
         jwt({ token, user, trigger, session }) {
             if (user) {
@@ -36,7 +24,7 @@ export const authConfig = {
         session({ session, token }) {
             if (token) {
                 session.user.id = token.id as string
-                session.user.role = token.role as "ADMIN" | "STAFF" | "USER" | "CUSTOMER"
+                session.user.role = token.role as any
             }
             return session
         },

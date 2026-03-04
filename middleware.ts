@@ -1,23 +1,24 @@
-import { type NextRequest } from "next/server"
-import { updateSession } from "@/utils/supabase/middleware"
-import { NextResponse } from "next/server"
+import { auth } from "@/auth"
+import { NextResponse, type NextRequest } from "next/server"
 
-export async function proxy(request: NextRequest) {
-    const { supabaseResponse, user } = await updateSession(request)
+export async function middleware(request: NextRequest) {
+    const session = await auth()
+    const user = session?.user
+
     const url = request.nextUrl
     const hostnameWithPort = request.headers.get("host") || ""
     const hostname = hostnameWithPort.split(":")[0]
 
-    // Define domains to exclude from subdomain routing (e.g., your main marketing site)
+    // Define domains to exclude from subdomain routing
     const rootDomains = ["localhost", "ecom-saas.com"]
 
     let domain = ""
-    if (rootDomains.includes(hostname)) {
-        // If accessing the root domain, we show the platform landing page
+    if (hostname === "localhost" || hostname === "ecom-saas.com") {
         domain = "platform"
+    } else if (hostname.endsWith(".localhost")) {
+        domain = hostname.replace(".localhost", "")
     } else {
-        // Extract subdomain
-        domain = hostnameWithPort.split(".")[0]
+        domain = hostname.split(".")[0]
     }
 
     const path = url.pathname
@@ -31,23 +32,37 @@ export async function proxy(request: NextRequest) {
 
         if (path.startsWith("/admin")) {
             const searchParams = url.searchParams.toString()
-            // Next.js rewrites match logical paths, not folder structure (route groups are omitted)
             const newPath = `/${domain}${path}${searchParams ? `?${searchParams}` : ""}`
             return NextResponse.rewrite(new URL(newPath, request.url))
         }
     }
 
-    // API prefix handling (if any global APIs exist)
-    if (path.startsWith("/api")) {
-        return supabaseResponse
+    // API prefix handling
+    if (path.startsWith("/api/auth")) {
+        return NextResponse.next()
     }
+
+    if (path.startsWith("/api")) {
+        return NextResponse.next()
+    }
+
 
     // Storefront routes: rewrite /xxx -> /[domain]/xxx
     const searchParams = url.searchParams.toString()
+
+    // Special case for 'admin' subdomain on port 3000 - visit root goes to admin
+    if (domain === "admin" && path === "/") {
+        return NextResponse.rewrite(new URL(`/admin/admin`, request.url))
+    }
+
     const newPath = `/${domain}${path === "/" ? "" : path}${searchParams ? `?${searchParams}` : ""}`
 
     return NextResponse.rewrite(new URL(newPath, request.url))
 }
+
+
+
+
 
 export const config = {
     matcher: [

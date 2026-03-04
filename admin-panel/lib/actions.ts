@@ -73,3 +73,18 @@ export async function getCategories() {
         orderBy: { name: "asc" },
     })
 }
+
+export async function updateStorePlan(storeId: string, plan: "FREE" | "PRO" | "PREMIUM") {
+    try {
+        await prisma.store.update({
+            where: { id: storeId },
+            data: { plan }
+        })
+
+        revalidatePath("/stores")
+        return { success: true }
+    } catch (error) {
+        console.error("Failed to update store plan:", error)
+        return { error: "Failed to update store plan" }
+    }
+}

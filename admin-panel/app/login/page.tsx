@@ -18,8 +18,8 @@ import { signIn } from "next-auth/react"
 export default function AdminLogin() {
     const router = useRouter()
     const [loading, setLoading] = useState(false)
-    const [email, setEmail] = useState("admin@example.com")
-    const [password, setPassword] = useState("password")
+    const [email, setEmail] = useState("admin@ecom.com")
+    const [password, setPassword] = useState("admin123")
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -35,7 +35,7 @@ export default function AdminLogin() {
             toast.error("Invalid credentials")
         } else {
             toast.success("Welcome back, Admin")
-            router.push("/admin")
+            router.push("/")
         }
         setLoading(false)
     }
@@ -64,12 +64,12 @@ export default function AdminLogin() {
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="password">Password</Label>
-                            <Input 
-                                id="password" 
-                                type="password" 
+                            <Input
+                                id="password"
+                                type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                required 
+                                required
                             />
                         </div>
                         <Button type="submit" className="w-full" disabled={loading}>

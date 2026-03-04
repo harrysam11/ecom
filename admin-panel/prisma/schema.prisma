@@ -9,10 +9,16 @@ datasource db {
 }
 
 enum Role {
-  USER
-  ADMIN
-  STAFF
+  SUPER_ADMIN
+  STORE_OWNER
+  STORE_STAFF
   CUSTOMER
+}
+
+enum Plan {
+  FREE
+  PRO
+  PREMIUM
 }
 
 model User {
@@ -22,105 +28,162 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?
-  role          Role      @default(USER)
+  role          Role      @default(CUSTOMER)
+  orders        Order[]
+  addresses     Address[]
+  carts         Cart[]
+  wishlists     Wishlist[]
+  storeUsers    StoreUser[]
+  auditLogs     AuditLog[]
+  reviews       Review[]
   accounts      Account[]
   sessions      Session[]
-  orders        Order[]
-  reviews       Review[]
-  addresses     Address[]
-  cart          Cart?
-  wishlist      Wishlist?
-  notifications Notification[]
-  auditLogs     AuditLog[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
 
 model Account {
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
- 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
- 
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
- 
-  @@id([provider, providerAccountId])
+
+  @@unique([provider, providerAccountId])
 }
 
 model Session {
+  id           String   @id @default(cuid())
   sessionToken String   @unique
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
- 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model VerificationToken {
   identifier String
-  token      String
+  token      String   @unique
   expires    DateTime
- 
-  @@id([identifier, token])
+
+  @@unique([identifier, token])
+}
+
+model Store {
+  id              String           @id @default(cuid())
+  name            String
+  subdomain       String           @unique
+  customDomain    String?          @unique
+  logo            String?
+  favicon         String?
+  banner          String?
+  plan            Plan             @default(FREE)
+  stripeCustomerId String?
+  stripeSubscriptionId String?
+  
+  // Merchant of Record (MoR) - Lemon Squeezy
+  morMerchantId   String?  // Store's Affiliate ID
+  morWebhookKey   String?  // Webhook signing secret
+  
+  siteSettings    Settings?
+  products        Product[]
+  categories      Category[]
+  orders          Order[]
+  coupons         Coupon[]
+  storeUsers      StoreUser[]
+  carts           Cart[]
+  wishlists       Wishlist[]
+  shippingZones   ShippingZone[]
+  reviews         Review[]
+
+  // Plugins & Customization
+  activePlugins   String[] @default([]) // e.g., ["whatsapp", "analytics-pro"]
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model StoreUser {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  role      Role     @default(STORE_STAFF)
+  permissions Json?    // { "products": ["view", "edit"], "orders": ["view"] }
+  createdAt DateTime @default(now())
+
+  @@unique([userId, storeId])
 }
 
 model Category {
   id          String    @id @default(cuid())
-  name        String    @unique
-  slug        String    @unique
+  name        String
+  slug        String
   image       String?
   parentId    String?
   parent      Category?  @relation("ParentCategory", fields: [parentId], references: [id])
   children    Category[] @relation("ParentCategory")
   products    Product[]
+  storeId     String
+  store       Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  @@unique([storeId, slug])
+  @@unique([storeId, name])
   @@index([parentId])
+  @@index([storeId])
 }
 
 model Product {
   id              String           @id @default(cuid())
   name            String
-  slug            String           @unique
+  slug            String
   description     String
-  metaTitle       String?
-  metaDescription String?
   price           Decimal          @db.Decimal(10, 2)
   stock           Int              @default(0)
   lowStockThreshold Int            @default(10)
   images          String[]
   status          ProductStatus    @default(DRAFT)
+  metaTitle       String?
+  metaDescription String?
+  morVariantId    String?          // Lemon Squeezy specific checkout link ID
   categoryId      String
   category        Category         @relation(fields: [categoryId], references: [id])
-  variants        ProductVariant[]
-  inventoryLogs   InventoryLog[]
+  storeId         String
+  store           Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
   orderItems      OrderItem[]
-  reviews         Review[]
   cartItems       CartItem[]
   wishlistItems   WishlistItem[]
+  inventoryLogs   InventoryLog[]
+  reviews         Review[]
+  variants        ProductVariant[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
+  @@unique([storeId, slug])
   @@index([categoryId])
+  @@index([storeId])
   @@index([status])
 }
 
-enum ProductStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
+model InventoryLog {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  change    Int
+  createdAt DateTime @default(now())
+
+  @@index([productId])
 }
 
 model ProductVariant {
@@ -134,13 +197,11 @@ model ProductVariant {
   updatedAt DateTime @updatedAt
 }
 
-model InventoryLog {
-  id        String   @id @default(cuid())
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  change    Int // + for stock in, - for stock out
-  reason    String // e.g., "Order #123", "Restock"
-  createdAt DateTime @default(now())
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
 }
 
 model Order {
@@ -148,39 +209,30 @@ model Order {
   orderNumber   String      @unique @default(cuid())
   userId        String
   user          User        @relation(fields: [userId], references: [id])
+  storeId       String
+  store         Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
   items         OrderItem[]
   total         Decimal     @db.Decimal(10, 2)
-  status        OrderStatus @default(PENDING)
-  paymentStatus PaymentStatus @default(UNPAID)
-  paymentId     String?
-  payments      Payment[]
+  commissionFee Decimal     @db.Decimal(10, 2) @default(0)
+  status          OrderStatus @default(PENDING)
+  paymentStatus   PaymentStatus @default(UNPAID)
+  paymentId       String?
+  trackingNumber  String?     @default("")
+  courierName     String?     @default("")
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  shipmentStatus  String?
+  invoiceUrl      String?
+  payments        Payment[]
   addressId     String?
   address       Address?    @relation(fields: [addressId], references: [id])
-  trackingNumber String?
-  courierName    String?
-  shippedAt      DateTime?
-  deliveredAt    DateTime?
-  shipmentStatus String? // e.g., "In Transit", "Out for Delivery"
-  invoiceUrl    String?
   returnRequests ReturnRequest[]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
   @@index([userId])
+  @@index([storeId])
   @@index([status])
-}
-
-enum OrderStatus {
-  PENDING
-  PAID
-  PACKED
-  SHIPPED
-  OUT_FOR_DELIVERY
-  DELIVERED
-  CANCELLED
-  RETURN_REQUESTED
-  RETURNED
-  REFUNDED
 }
 
 enum PaymentStatus {
@@ -188,6 +240,27 @@ enum PaymentStatus {
   PAID
   FAILED
   REFUNDED
+}
+
+
+model Payment {
+  id            String   @id @default(cuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount        Decimal  @db.Decimal(10, 2)
+  status        String   // PENDING, PAID, FAILED
+  paymentMethod String?
+  createdAt     DateTime @default(now())
+
+  @@index([orderId])
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
 }
 
 model OrderItem {
@@ -201,19 +274,6 @@ model OrderItem {
 
   @@index([orderId])
   @@index([productId])
-}
-
-model Payment {
-  id              String        @id @default(cuid())
-  orderId         String
-  order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  amount          Decimal       @db.Decimal(10, 2)
-  currency        String        @default("USD")
-  status          PaymentStatus @default(PAID)
-  transactionId   String?
-  paymentMethod   String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
 }
 
 model Address {
@@ -230,34 +290,16 @@ model Address {
   @@index([userId])
 }
 
-model Review {
-  id        String   @id @default(cuid())
-  rating    Int
-  comment   String?
-  status    ReviewStatus @default(PENDING)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  productId String
-  product   Product  @relation(fields: [productId], references: [id])
-  createdAt DateTime @default(now())
-
-  @@index([productId])
-  @@index([userId])
-  @@index([status])
-}
-
-enum ReviewStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
 model Cart {
   id        String     @id @default(cuid())
-  userId    String     @unique
+  userId    String
   user      User       @relation(fields: [userId], references: [id])
+  storeId   String
+  store     Store      @relation(fields: [storeId], references: [id], onDelete: Cascade)
   items     CartItem[]
   updatedAt DateTime   @updatedAt
+
+  @@unique([userId, storeId])
 }
 
 model CartItem {
@@ -271,9 +313,14 @@ model CartItem {
 
 model Wishlist {
   id        String         @id @default(cuid())
-  userId    String         @unique
+  userId    String
   user      User           @relation(fields: [userId], references: [id])
+  storeId   String
+  store     Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
   items     WishlistItem[]
+  updatedAt DateTime       @updatedAt
+
+  @@unique([userId, storeId])
 }
 
 model WishlistItem {
@@ -286,7 +333,7 @@ model WishlistItem {
 
 model Coupon {
   id            String   @id @default(cuid())
-  code          String   @unique
+  code          String
   discountType  DiscountType @default(FIXED)
   discountValue Decimal  @db.Decimal(10, 2)
   minCartValue  Decimal? @db.Decimal(10, 2)
@@ -294,8 +341,13 @@ model Coupon {
   usageCount    Int      @default(0)
   expiresAt     DateTime
   isActive      Boolean  @default(true)
+  storeId       String
+  store         Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@unique([storeId, code])
+  @@index([storeId])
 }
 
 enum DiscountType {
@@ -304,73 +356,61 @@ enum DiscountType {
 }
 
 model Settings {
-  id            String   @id @default("site-settings")
-  siteName      String   @default("My Store")
-  metaTitle     String?
+  id              String   @id @default(cuid())
+  storeId         String   @unique
+  store           Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  siteName        String   @default("My Store")
+  companyName     String?
+  taxPercentage   Float?   @default(0)
+  email           String?
+  phone           String?
+  address         String?
+  metaTitle       String?
   metaDescription String?
-  logo          String?
-  favicon       String?
-  companyName   String?
-  address       String?
-  email         String?
-  phone         String?
-  taxPercentage Decimal  @default(0) @db.Decimal(5, 2)
-  currency      String   @default("USD")
-  shippingRates Json?
-  footerText    String?
-  isCODEnabled  Boolean  @default(true)
-  updatedAt     DateTime @updatedAt
+  footerText      String?
+  themeColor      String   @default("#000000")
+  fontFamily      String   @default("inter")
+  
+  // Brand & Content
+  bannerTitle     String?  @default("Premium Collection")
+  bannerSubtitle  String?  @default("Experience the finest selection of curated products.")
+  brandText       String?  @default("Premium Ecom")
+  
+  showNewsletter  Boolean  @default(true)
+  isCODEnabled    Boolean  @default(true)
+  paymentGateway  String?  // stripe, paypal, etc.
+  updatedAt       DateTime @updatedAt
+
+  @@index([storeId])
 }
 
 model ShippingZone {
   id        String         @id @default(cuid())
-  name      String         @unique // e.g., "India", "North America"
-  countries String[]       // ["IN"], ["US", "CA"]
-  states    String[]       // ["KA", "MH"] or empty for all
+  name      String
+  countries String[]
+  states    String[]
   rates     ShippingRate[]
+  storeId   String
+  store     Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
+
+  @@index([storeId])
 }
 
 model ShippingRate {
   id            String       @id @default(cuid())
+  name          String
+  flatPrice     Decimal      @db.Decimal(10, 2)
+  minWeight     Decimal      @db.Decimal(10, 2) @default(0)
+  maxWeight     Decimal?     @db.Decimal(10, 2)
+  estimatedDays String?
   zoneId        String
   zone          ShippingZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
-  minWeight     Decimal      @default(0) @db.Decimal(10, 2)
-  maxWeight     Decimal?     @db.Decimal(10, 2)
-  flatPrice     Decimal      @db.Decimal(10, 2)
-  estimatedDays String?      // e.g., "3-5 days"
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
-}
 
-model ReturnRequest {
-  id           String       @id @default(cuid())
-  orderId      String
-  order        Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  reason       String
-  status       ReturnStatus @default(PENDING)
-  refundStatus RefundStatus @default(NOT_REFUNDED)
-  approvedBy   String?      // UserId
-  adminNotes   String?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-}
-
-enum ReturnStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  PICKED_UP
-  RECEIVED
-  COMPLETED
-}
-
-enum RefundStatus {
-  NOT_REFUNDED
-  PENDING
-  COMPLETED
-  FAILED
+  @@index([zoneId])
 }
 
 model EmailLog {
@@ -378,29 +418,63 @@ model EmailLog {
   to        String
   subject   String
   template  String
-  status    String // SENT, FAILED
-  error     String?
-  createdAt DateTime @default(now())
-}
-
-model Notification {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  title     String
-  message   String
-  type      String // NEW_ORDER, LOW_STOCK, etc.
-  isRead    Boolean  @default(false)
+  status    String
   createdAt DateTime @default(now())
 }
 
 model AuditLog {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  action    String // PRODUCT_UPDATE, ORDER_STATUS_CHANGE, etc.
-  entity    String // Product, Order, etc.
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String
+  entity    String
   entityId  String
   details   Json?
   createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String
+  status    ReviewStatus @default(PENDING)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId])
+  @@index([userId])
+  @@index([storeId])
+  @@index([status])
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model ReturnRequest {
+  id        String       @id @default(cuid())
+  orderId   String
+  order     Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  reason    String
+  status    ReturnStatus @default(PENDING)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([orderId])
+}
+
+enum ReturnStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }

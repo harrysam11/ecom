@@ -60,13 +60,23 @@ export async function createProduct(data: z.infer<typeof productSchema>) {
     }
 }
 
-export async function updateProduct(id: string, data: z.infer<typeof productSchema>) {
+export async function updateProduct(id: string, data: any) {
     try {
         const store = await getStoreOrThrow()
+        const { variants, ...productData } = data
+
         const product = await prisma.product.update({
             where: { id, storeId: store.id },
             data: {
-                ...data,
+                ...productData,
+                variants: {
+                    deleteMany: {}, // Simpler for now: clear and recreate
+                    create: variants.map((v: any) => ({
+                        name: v.name,
+                        price: v.price || productData.price,
+                        stock: v.stock || 0,
+                    }))
+                }
             }
         })
 
@@ -345,6 +355,54 @@ export async function updateOrderTracking(orderId: string, trackingNumber: strin
             }
         })
         revalidatePath("/admin/orders")
+        return { success: true }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+export async function togglePlugin(pluginId: string, isActive: boolean) {
+    try {
+        const store = await getStoreOrThrow()
+
+        let activePlugins = (store as any).activePlugins || []
+
+        if (isActive) {
+            if (!activePlugins.includes(pluginId)) {
+                activePlugins.push(pluginId)
+            }
+        } else {
+            activePlugins = activePlugins.filter((id: string) => id !== pluginId)
+        }
+
+        await prisma.store.update({
+            where: { id: store.id },
+            data: { activePlugins } as any
+        })
+
+        revalidatePath("/(admin)", "layout")
+        return { success: true }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+export async function updateThemeSettings(data: any) {
+    try {
+        const store = await getStoreOrThrow()
+
+        await prisma.settings.upsert({
+            where: { storeId: store.id },
+            update: {
+                ...data,
+            },
+            create: {
+                storeId: store.id,
+                ...data,
+            }
+        })
+
+        revalidatePath("/", "layout")
         return { success: true }
     } catch (error: any) {
         return { success: false, error: error.message }
