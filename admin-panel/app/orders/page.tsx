@@ -1,13 +1,3 @@
-import Link from "next/link"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card"
 import {
     Table,
     TableBody,
@@ -16,77 +6,69 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { prisma } from "@/lib/prisma"
 import { format } from "date-fns"
+import { Badge } from "@/components/ui/badge"
 
-export default async function OrdersPage() {
+export const dynamic = 'force-dynamic'
+
+export default async function GlobalOrdersPage() {
     const orders = await prisma.order.findMany({
-        orderBy: { createdAt: "desc" },
         include: {
             user: { select: { name: true, email: true } },
-            _count: { select: { items: true } }
-        }
+            store: { select: { name: true, subdomain: true } },
+        },
+        orderBy: { createdAt: "desc" }
     })
 
-    const statusMap: Record<string, string> = {
-        PENDING: "secondary",
-        PROCESSING: "outline",
-        SHIPPED: "default",
-        DELIVERED: "success",
-        CANCELLED: "destructive",
-        REFUNDED: "outline",
-    }
-
     return (
-        <div className="flex flex-col gap-6">
-            <div>
-                <h1 className="text-lg font-semibold md:text-2xl font-serif text-primary">Orders</h1>
-                <p className="text-sm text-muted-foreground">Manage customer orders and shipments.</p>
+        <div className="p-8 space-y-6">
+            <div className="flex items-center justify-between">
+                <h1 className="text-3xl font-bold text-primary">Global Orders</h1>
             </div>
 
             <Card>
                 <CardHeader>
-                    <CardTitle className="font-serif">Recent Orders</CardTitle>
-                    <CardDescription>
-                        A history of all orders in your store.
-                    </CardDescription>
+                    <CardTitle>Recent Orders across all stores</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Order</TableHead>
+                                <TableHead>Order ID</TableHead>
+                                <TableHead>Store</TableHead>
                                 <TableHead>Customer</TableHead>
+                                <TableHead>Total</TableHead>
+                                <TableHead>Platform Fee</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Date</TableHead>
-                                <TableHead>Amount</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {orders.map((order) => (
                                 <TableRow key={order.id}>
-                                    <TableCell className="font-medium">#{order.orderNumber.slice(-6).toUpperCase()}</TableCell>
+                                    <TableCell className="font-mono text-xs">{order.id.slice(0, 8)}...</TableCell>
                                     <TableCell>
-                                        <div className="text-sm font-medium">{order.user.name || "N/A"}</div>
-                                        <div className="text-xs text-muted-foreground">{order.user.email}</div>
+                                        <div className="flex flex-col">
+                                            <span className="font-medium">{order.store.name}</span>
+                                            <span className="text-xs text-muted-foreground">{order.store.subdomain}.localhost</span>
+                                        </div>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant={statusMap[order.status] as any || "outline"}>
+                                        <div className="flex flex-col">
+                                            <span>{order.user.name || "Unknown"}</span>
+                                            <span className="text-xs text-muted-foreground">{order.user.email}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="font-medium">${Number(order.total).toFixed(2)}</TableCell>
+                                    <TableCell className="text-emerald-600 font-semibold">+${Number(order.commissionFee).toFixed(2)}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={order.status === "PAID" ? "default" : "secondary"}>
                                             {order.status}
                                         </Badge>
                                     </TableCell>
-                                    <TableCell className="text-sm">
-                                        {format(order.createdAt, "MMM dd, yyyy")}
-                                    </TableCell>
-                                    <TableCell className="font-serif font-medium">
-                                        ${Number(order.total).toFixed(2)}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="ghost" size="sm" asChild>
-                                            <Link href={`/orders/${order.id}`}>Details</Link>
-                                        </Button>
-                                    </TableCell>
+                                    <TableCell>{format(order.createdAt, "MMM dd, HH:mm")}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

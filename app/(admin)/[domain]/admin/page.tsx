@@ -14,7 +14,8 @@ import {
 import { prisma } from "@/lib/prisma"
 import { SalesChart } from "@/components/admin/sales-chart"
 import { format } from "date-fns"
-import { getStoreOrThrow } from "@/lib/store"
+import { currentStore } from "@/lib/store"
+import { redirect } from "next/navigation"
 
 export default async function DashboardPage({
     params
@@ -22,7 +23,11 @@ export default async function DashboardPage({
     params: Promise<{ domain: string }>
 }) {
     const { domain } = await params
-    const store = await getStoreOrThrow()
+    const store = await currentStore()
+
+    if (!store || domain === 'platform') {
+        redirect(`http://admin.${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'localhost:3000'}/admin`)
+    }
 
     // 1. Fetch Total Revenue
     const revenueResult = await prisma.order.aggregate({

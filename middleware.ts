@@ -25,6 +25,11 @@ export async function middleware(request: NextRequest) {
 
     // Rewriting logic
     if (path.startsWith("/admin") || path.startsWith("/setup")) {
+        // If on platform domain and trying to access admin, redirect to admin.localhost
+        if (domain === "platform") {
+            return NextResponse.redirect(new URL(`http://admin.${hostnameWithPort}${path}`, request.url))
+        }
+
         // Admin or Setup routes: basic Auth Check
         if (!user && !path.includes("/login")) {
             return NextResponse.redirect(new URL("/admin/login", request.url))
@@ -50,9 +55,9 @@ export async function middleware(request: NextRequest) {
     // Storefront routes: rewrite /xxx -> /[domain]/xxx
     const searchParams = url.searchParams.toString()
 
-    // Special case for 'admin' subdomain on port 3000 - visit root goes to admin
+    // Special case for 'admin' subdomain: root goes to admin login/dashboard
     if (domain === "admin" && path === "/") {
-        return NextResponse.rewrite(new URL(`/admin/admin`, request.url))
+        return NextResponse.redirect(new URL("/admin", request.url))
     }
 
     const newPath = `/${domain}${path === "/" ? "" : path}${searchParams ? `?${searchParams}` : ""}`
